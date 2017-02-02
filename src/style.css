@@ -1,0 +1,59 @@
+body {
+    margin:0px;
+}
+* {
+    box-sizing: border-box;
+}
+.post {
+    float: left;
+    padding: 15px;
+    width: 50%;
+}
+.auth {
+    text-align: center;
+    padding:30px
+}
+textarea{
+    width:100%;
+    resize: none;
+}
+li {
+    list-style: none;
+}
+li:hover {
+    cursor:pointer;
+    color:blue;
+}
+.li_mine {
+    color:red;
+}
+.auth_inputs{
+    width:100px;
+    height:20px;
+}
+#auth_login_and_signup, #auth_ok_and_no, #auth_id_and_password, #auth_logout_and_remove, #post_delete, #post_modify,
+#post_write{
+    display: none;
+}
+
+#auth_message {
+    visibility: hidden;
+    color: red;
+}
+
+#auth_user:hover {
+    cursor: pointer;
+    color:red;
+}
+
+#post_title{
+
+}
+
+.draggable {
+
+    -webkit-transform: translate(0px, 0px);
+    transform: translate(0px, 0px);
+    -ms-touch-action: none;
+    touch-action: none;
+}

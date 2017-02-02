@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="kr">
+<head>
+    <meta charset="UTF-8">
+    <title>Study_YangKiYeop</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+</head>
+<body>
+<div class='auth'>
+    <h2 id='auth_user'></h2>
+    <div id='auth_login_and_signup'>
+        <button id="auth_login" class='auth_inputs'>로그인</button>
+        <button id="auth_signup" class='auth_inputs'>회원가입</button>
+    </div>
+    <div id='auth_ok_and_no'>
+        <button id="auth_ok" class='auth_inputs'>확인</button>
+        <button id="auth_no" class='auth_inputs'>취소</button>
+    </div>
+    <div id='auth_id_and_password'>
+        <input type = 'text' id="auth_id" class='auth_inputs' placeholder="아이디"/>
+        <input type = 'password' id="auth_password" class='auth_inputs' placeholder="비밀번호"/>
+    </div>
+    <div id='auth_logout_and_remove'>
+        <button id="auth_logout" class='auth_inputs'>로그아웃</button>
+        <button id="auth_delete" class='auth_inputs'>회원삭제</button>
+    </div>
+    <h4 id='auth_message'>비밀번호가 틀립니다.</h4>
+</div>
+<div class='post'>
+    <ul id="post_list">
+    </ul>
+</div>
+<div class='post'>
+    <div>
+        <p id='post_username'></p>
+        <p id='post_title'></p>
+        <p id='post_content'></p>
+        <div id='post_modify_and_delete'>
+            <button id='post_modify' class="post_inputs" style="float:left">수정</button>
+            <button id='post_delete' class="post_inputs">삭제</button>
+        </div>
+    </div>
+    <hr>
+    <div id='post_write'>
+        <textarea id='post_write_title' placeholder='제목'></textarea>
+        <br>
+        <textarea id='post_write_content' placeholder='내용'></textarea>
+        <br>
+        <button id='post_write_save'>글쓰기</button>
+    </div>
+</div>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src="//cdn.jsdelivr.net/interact.js/1.2.6/interact.min.js"></script>
+<script src='/bundle.js'></script>
+</body>
+</html>
