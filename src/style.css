@@ -4,12 +4,12 @@ body {
 * {
     box-sizing: border-box;
 }
-.post {
+.home_half {
     float: left;
     padding: 15px;
     width: 50%;
 }
-.auth {
+.header {
     text-align: center;
     padding:30px
 }
@@ -27,21 +27,13 @@ li:hover {
 .li_mine {
     color:red;
 }
-.auth_inputs{
+.header_inputs{
     width:100px;
     height:20px;
 }
-#auth_login_and_signup, #auth_ok_and_no, #auth_id_and_password, #auth_logout_and_remove, #post_delete, #post_modify,
-#post_write{
-    display: none;
-}
 
-#auth_message {
-    visibility: hidden;
-    color: red;
-}
 
-#auth_user:hover {
+#header_user:hover {
     cursor: pointer;
     color:red;
 }
