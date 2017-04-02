@@ -125,6 +125,7 @@ class Home extends React.Component {
         );
     }
     render() {
+        console.log('Why it is called 4 times?');
         let view_WritePost = undefined;
         if(this.props.session.currentUser) {
             if(this.state.modify) {

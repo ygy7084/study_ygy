@@ -68,7 +68,7 @@ export default function account(state = initialState, action) {
             return update(state, {
                 session : {
                     status : { $set : 'SUCCESS' },
-                    currentUser : { $set : action.username }
+                    currentUser : { $set : action.profile }
                 }
             });
         case types.ACCOUNT_SESSION_FAILURE :

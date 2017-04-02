@@ -36,7 +36,9 @@ passport.deserializeUser(function(username, cb) {
 router.use(passport.initialize());
 router.use(passport.session());
 
+
 //Routes
+/*
 router.get('/auth', (req,res) => {
     //If user is not stored in session, it will return undefined.
     if(!req.user) {
@@ -51,6 +53,21 @@ router.get('/auth', (req,res) => {
         return res.json({username: req.user});
     }
 });
+*/
+// router.get('/auth', (req,res) => {
+//     //If user is not stored in session, it will return undefined.
+//     if(!req.user) {
+//         return res.json({username:null});
+//     }
+//     else {
+//         let expire_time = 300000;// 5min
+//         req.session.cookie.expires = new Date(Date.now() + expire_time);
+//         req.session.cookie.maxAge = expire_time;
+//         // If user connect again within 5min from last connection,
+//         // the expiration time is renewed.
+//         return res.json({username: req.user});
+//     }
+// });
 
 router.post('/login', (req,res,next) => {
     passport.authenticate('local', (err, user, info) => {

@@ -6,14 +6,16 @@
   "scripts": {
     "start": "node build/server.js",
     "build": "babel server -d build && webpack",
-    "bs": "babel server -d build && webpack && node build/server.js"
+    "bs": "SET NODE_ENV=development&& babel server -d build && webpack && node build/server.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "babel-polyfill": "^6.22.0",
+    "babel": "^6.23.0",
+    "babel-polyfill": "^6.23.0",
     "body-parser": "^1.15.2",
     "connect-flash": "^0.1.1",
+    "connect-memcached": "^0.2.0",
     "cookie-parser": "^1.4.3",
     "express": "^4.14.0",
     "express-session": "^1.14.2",
@@ -22,6 +24,7 @@
     "morgan": "^1.7.0",
     "node-fetch": "^1.6.3",
     "passport": "^0.3.2",
+    "passport-google-oauth20": "^1.0.0",
     "passport-local": "^1.0.0",
     "react": "^15.4.2",
     "react-addons-css-transition-group": "^15.4.2",
@@ -34,7 +37,7 @@
     "redux-thunk": "^2.2.0"
   },
   "devDependencies": {
-    "babel-cli": "^6.18.0",
+    "babel-cli": "^6.24.0",
     "babel-core": "^6.22.1",
     "babel-loader": "^6.2.10",
     "babel-preset-env": "^1.1.8",

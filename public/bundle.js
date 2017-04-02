@@ -34583,7 +34583,8 @@
 	    _createClass(App, [{
 	        key: 'componentWillMount',
 	        value: function componentWillMount() {
-	            this.props.sessionRequest();
+	            //this.props.sessionRequest();
+
 	        }
 	    }, {
 	        key: 'render',
@@ -34663,23 +34664,57 @@
 	function removeSuccess() {}
 	function removeFailure() {}
 
-	exports.loginRequest = loginRequest = function loginRequest(username, password) {
+	/*
+	loginRequest = (username, password) => {
+	 return (dispatch) => {
+	 dispatch(login());
+
+	 let username_and_password = {
+	 username,
+	 password
+	 };
+	 return fetch('/api/account/login', {
+	 method : 'POST',
+	 headers : {'Content-Type' : 'application/json'},
+	 credentials: 'include',
+	 body : JSON.stringify(username_and_password)
+	 })
+	 .then(res => res.json())
+	 .then(res => {
+	 if(res.success)
+	 dispatch(loginSuccess(username));
+	 else
+	 dispatch(loginFailure());
+	 }).catch((error) => {
+	 dispatch(loginFailure());
+	 });
+	 }
+	 };
+	 login = () => {
+	 return {
+	 type : ACCOUNT_LOGIN
+	 }
+	 };
+	 loginSuccess = (username) => {
+	 return {
+	 type : ACCOUNT_LOGIN_SUCCESS,
+	 username
+	 }
+	 };
+	 loginFailure = () => {
+	 return {
+	 type : ACCOUNT_LOGIN_FAILURE
+	 }
+	 };
+	*/
+	exports.loginRequest = loginRequest = function loginRequest(returnURI) {
 	    return function (dispatch) {
 	        dispatch(login());
 
-	        var username_and_password = {
-	            username: username,
-	            password: password
-	        };
-	        return fetch('/api/account/login', {
-	            method: 'POST',
-	            headers: { 'Content-Type': 'application/json' },
-	            credentials: 'include',
-	            body: JSON.stringify(username_and_password)
-	        }).then(function (res) {
+	        return fetch('/auth/login' + '?return=' + returnURI, { method: 'GET' }).then(function (res) {
 	            return res.json();
 	        }).then(function (res) {
-	            if (res.success) dispatch(loginSuccess(username));else dispatch(loginFailure());
+	            if (res.success) dispatch(loginSuccess(res.profile));else dispatch(loginFailure());
 	        }).catch(function (error) {
 	            dispatch(loginFailure());
 	        });
@@ -34690,10 +34725,10 @@
 	        type: _actions.ACCOUNT_LOGIN
 	    };
 	};
-	exports.loginSuccess = loginSuccess = function loginSuccess(username) {
+	exports.loginSuccess = loginSuccess = function loginSuccess(profile) {
 	    return {
 	        type: _actions.ACCOUNT_LOGIN_SUCCESS,
-	        username: username
+	        profile: profile
 	    };
 	};
 	exports.loginFailure = loginFailure = function loginFailure() {
@@ -34736,17 +34771,56 @@
 	    };
 	};
 
-	exports.sessionRequest = sessionRequest = function sessionRequest() {
-	    return function (dispatch) {
+	/*
+	sessionRequest = () => {
+	    return (dispatch) => {
 	        dispatch(session());
 
 	        return fetch('/api/account/auth', {
 	            method: 'GET',
 	            credentials: 'include'
+	        })
+	            .then(res => res.json())
+	            .then(res => {
+	                if (res.username)
+	                    dispatch(sessionSuccess(res.username));
+	                else
+	                    dispatch(sessionFailure());
+	            }).catch((error) => {
+	                dispatch(sessionFailure());
+	            });
+	    }
+	};
+	session = () => {
+	    return {
+	        type : ACCOUNT_SESSION
+	    }
+	};
+	sessionSuccess = (username) => {
+	    return {
+	        type : ACCOUNT_SESSION_SUCCESS,
+	        username
+	    }
+	};
+	sessionFailure = () => {
+	    return {
+	        type : ACCOUNT_SESSION_FAILURE
+	    }
+	};
+	*/
+	exports.sessionRequest = sessionRequest = function sessionRequest() {
+	    return function (dispatch) {
+	        dispatch(session());
+
+	        return fetch('/auth', {
+	            method: 'GET',
+	            credentials: 'include'
 	        }).then(function (res) {
 	            return res.json();
 	        }).then(function (res) {
-	            if (res.username) dispatch(sessionSuccess(res.username));else dispatch(sessionFailure());
+	            if (res.profile) {
+	                dispatch(sessionSuccess(res.profile));
+	            } else dispatch(sessionFailure());
 	        }).catch(function (error) {
 	            dispatch(sessionFailure());
 	        });
@@ -34757,10 +34831,10 @@
 	        type: _actions.ACCOUNT_SESSION
 	    };
 	};
-	exports.sessionSuccess = sessionSuccess = function sessionSuccess(username) {
+	exports.sessionSuccess = sessionSuccess = function sessionSuccess(profile) {
 	    return {
 	        type: _actions.ACCOUNT_SESSION_SUCCESS,
-	        username: username
+	        profile: profile
 	    };
 	};
 	exports.sessionFailure = sessionFailure = function sessionFailure() {
@@ -37043,6 +37117,7 @@
 	        _this.handleLogout = _this.handleLogout.bind(_this);
 	        _this.handleSignup = _this.handleSignup.bind(_this);
 	        _this.handleRemove = _this.handleRemove.bind(_this);
+
 	        return _this;
 	    }
 
@@ -37069,18 +37144,30 @@
 	                    break;
 	            }
 	        }
+	        /*
+	        handleLogin(username, password) {
+	            return this.props.loginRequest(username, password).then(
+	                () => {
+	                    if(this.props.login_status === 'SUCCESS') {
+	                        this.props.sessionRequest();
+	                        return true;
+	                    }
+	                    else {
+	                        return false;
+	                    }
+	                }
+	            );
+	        }
+	        */
+
 	    }, {
 	        key: 'handleLogin',
-	        value: function handleLogin(username, password) {
+	        value: function handleLogin() {
 	            var _this2 = this;
 
-	            return this.props.loginRequest(username, password).then(function () {
-	                if (_this2.props.login_status === 'SUCCESS') {
-	                    _this2.props.sessionRequest();
-	                    return true;
-	                } else {
-	                    return false;
-	                }
+	            var returnURI = encodeURIComponent(document.URL);
+	            return this.props.loginRequest(returnURI).then(function () {
+	                return _this2.props.login_status === 'SUCCESS';
 	            });
 	        }
 	    }, {
@@ -37112,11 +37199,7 @@
 	            var _this5 = this;
 
 	            return this.props.removeRequest(this.props.session_currentUser).then(function () {
-	                if (_this5.props.remove_status === 'SUCCESS') {
-	                    return true;
-	                } else {
-	                    return false;
-	                }
+	                return _this5.props.remove_status === 'SUCCESS';
 	            });
 	        }
 	    }, {
@@ -37143,7 +37226,7 @@
 	                    header = _react2.default.createElement(_components.Header_default, { handleView: this.handleView });
 	                    break;
 	                case 'LOGGED_IN':
-	                    header = _react2.default.createElement(_components.Header_loggedIn, { username: this.props.session_currentUser, onLogout: this.handleLogout, onRemove: this.handleRemove });
+	                    header = _react2.default.createElement(_components.Header_loggedIn, { session_currentUser: this.props.session_currentUser, onLogout: this.handleLogout, onRemove: this.handleRemove });
 	                    break;
 	                case 'LOGIN':
 	                case 'SIGNUP':
@@ -37152,9 +37235,15 @@
 	                default:
 	                    header = _react2.default.createElement(_components.Header_default, { handleView: this.handleView });
 	            }
+
 	            return _react2.default.createElement(
 	                'div',
 	                { className: 'header' },
+	                _react2.default.createElement(
+	                    'a',
+	                    { href: '/auth/login' },
+	                    'abab'
+	                ),
 	                header
 	            );
 	        }
@@ -37173,8 +37262,11 @@
 	};
 	var mapDispatchToProps = function mapDispatchToProps(dispatch) {
 	    return {
-	        loginRequest: function loginRequest(username, password) {
-	            return dispatch((0, _account.loginRequest)(username, password));
+	        // loginRequest : (username, password) => {
+	        //     return dispatch(loginRequest(username, password));
+	        // }
+	        loginRequest: function loginRequest(returnURI) {
+	            return dispatch((0, _account.loginRequest)(returnURI));
 	        },
 	        signupRequest: function signupRequest(username, password) {
 	            return dispatch((0, _account.signupRequest)(username, password));
@@ -37350,7 +37442,7 @@
 	                _react2.default.createElement(
 	                    'div',
 	                    { className: 'header_user' },
-	                    this.props.username
+	                    this.props.session_currentUser.displayName
 	                ),
 	                _react2.default.createElement(
 	                    'div',
@@ -37990,6 +38082,7 @@
 	    }, {
 	        key: 'render',
 	        value: function render() {
+	            console.log('Why it is called 4 times?');
 	            var view_WritePost = undefined;
 	            if (this.props.session.currentUser) {
 	                if (this.state.modify) {
@@ -38413,7 +38506,7 @@
 	            return (0, _reactAddonsUpdate2.default)(state, {
 	                session: {
 	                    status: { $set: 'SUCCESS' },
-	                    currentUser: { $set: action.username }
+	                    currentUser: { $set: action.profile }
 	                }
 	            });
 	        case types.ACCOUNT_SESSION_FAILURE:

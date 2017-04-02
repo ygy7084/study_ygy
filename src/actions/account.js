@@ -37,24 +37,58 @@ export function remove(){}
 export function removeSuccess(){}
 export function removeFailure(){}
 
+/*
 loginRequest = (username, password) => {
+ return (dispatch) => {
+ dispatch(login());
+
+ let username_and_password = {
+ username,
+ password
+ };
+ return fetch('/api/account/login', {
+ method : 'POST',
+ headers : {'Content-Type' : 'application/json'},
+ credentials: 'include',
+ body : JSON.stringify(username_and_password)
+ })
+ .then(res => res.json())
+ .then(res => {
+ if(res.success)
+ dispatch(loginSuccess(username));
+ else
+ dispatch(loginFailure());
+ }).catch((error) => {
+ dispatch(loginFailure());
+ });
+ }
+ };
+ login = () => {
+ return {
+ type : ACCOUNT_LOGIN
+ }
+ };
+ loginSuccess = (username) => {
+ return {
+ type : ACCOUNT_LOGIN_SUCCESS,
+ username
+ }
+ };
+ loginFailure = () => {
+ return {
+ type : ACCOUNT_LOGIN_FAILURE
+ }
+ };
+*/
+loginRequest = (returnURI) => {
     return (dispatch) => {
         dispatch(login());
 
-        let username_and_password = {
-            username,
-            password
-        };
-        return fetch('/api/account/login', {
-            method : 'POST',
-            headers : {'Content-Type' : 'application/json'},
-            credentials: 'include',
-            body : JSON.stringify(username_and_password)
-        })
+        return fetch('/auth/login'+'?return='+returnURI, {method : 'GET'})
             .then(res => res.json())
             .then(res => {
                 if(res.success)
-                    dispatch(loginSuccess(username));
+                    dispatch(loginSuccess(res.profile));
                 else
                     dispatch(loginFailure());
             }).catch((error) => {
@@ -67,10 +101,10 @@ login = () => {
         type : ACCOUNT_LOGIN
     }
 };
-loginSuccess = (username) => {
+loginSuccess = (profile) => {
     return {
         type : ACCOUNT_LOGIN_SUCCESS,
-        username
+        profile
     }
 };
 loginFailure = () => {
@@ -116,6 +150,7 @@ signupFailure = () => {
     }
 };
 
+/*
 sessionRequest = () => {
     return (dispatch) => {
         dispatch(session());
@@ -151,12 +186,49 @@ sessionFailure = () => {
         type : ACCOUNT_SESSION_FAILURE
     }
 };
+*/
+sessionRequest = () => {
+    return (dispatch) => {
+        dispatch(session());
+
+        return fetch('/auth', {
+            method: 'GET',
+            credentials: 'include'
+        })
+            .then(res => res.json())
+            .then(res => {
+                if (res.profile) {
+                    dispatch(sessionSuccess(res.profile));
+                }
+                    else
+                dispatch(sessionFailure());
+            }).catch((error) => {
+                dispatch(sessionFailure());
+            });
+    }
+};
+session = () => {
+    return {
+        type : ACCOUNT_SESSION
+    }
+};
+sessionSuccess = (profile) => {
+    return {
+        type : ACCOUNT_SESSION_SUCCESS,
+        profile
+    }
+};
+sessionFailure = () => {
+    return {
+        type : ACCOUNT_SESSION_FAILURE
+    }
+};
 
 logoutRequest = () => {
     return (dispatch) => {
         dispatch(logout());
 
-        return fetch('/api/account/logout', {
+        return fetch('/auth/logout', {
             method: 'GET',
             credentials: 'include'
         })

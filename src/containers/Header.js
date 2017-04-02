@@ -14,6 +14,7 @@ class Header extends React.Component{
         this.handleLogout = this.handleLogout.bind(this);
         this.handleSignup = this.handleSignup.bind(this);
         this.handleRemove = this.handleRemove.bind(this);
+
     }
     handleView(e) {
         switch(e) {
@@ -36,16 +37,11 @@ class Header extends React.Component{
                 break;
         }
     }
-    handleLogin(username, password) {
-        return this.props.loginRequest(username, password).then(
+    handleLogin() {
+        let returnURI = encodeURIComponent(document.URL);
+        return this.props.loginRequest(returnURI).then(
             () => {
-                if(this.props.login_status === 'SUCCESS') {
-                    this.props.sessionRequest();
-                    return true;
-                }
-                else {
-                    return false;
-                }
+                return this.props.login_status === 'SUCCESS';
             }
         );
     }
@@ -72,12 +68,7 @@ class Header extends React.Component{
     handleRemove() {
         return this.props.removeRequest(this.props.session_currentUser).then(
             () => {
-                if(this.props.remove_status === 'SUCCESS') {
-                    return true;
-                }
-                else {
-                    return false;
-                }
+                return this.props.remove_status === 'SUCCESS';
             }
         )
     }
@@ -101,7 +92,7 @@ class Header extends React.Component{
                 header = <Header_default handleView = {this.handleView}/>;
                 break;
             case 'LOGGED_IN' :
-                header = <Header_loggedIn username = {this.props.session_currentUser} onLogout = {this.handleLogout} onRemove = {this.handleRemove}/>;
+                header = <Header_loggedIn session_currentUser = {this.props.session_currentUser} onLogout = {this.handleLogout} onRemove = {this.handleRemove}/>;
                 break;
             case 'LOGIN'  :
             case 'SIGNUP' :
@@ -110,8 +101,10 @@ class Header extends React.Component{
             default :
                 header = <Header_default handleView = {this.handleView}/>;
         }
+
         return (
             <div className = 'header'>
+                <a href='/auth/login'>Login</a>
                 { header }
             </div>
         );
@@ -127,8 +120,11 @@ const mapStateToProps = (state) => {
 };
 const mapDispatchToProps = (dispatch) => {
     return {
-        loginRequest : (username, password) => {
-            return dispatch(loginRequest(username, password));
+        // loginRequest : (username, password) => {
+        //     return dispatch(loginRequest(username, password));
+        // }
+        loginRequest : (returnURI) => {
+            return dispatch(loginRequest(returnURI));
         },
         signupRequest : (username, password) => {
             return dispatch(signupRequest(username, password));
