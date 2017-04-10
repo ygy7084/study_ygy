@@ -4,40 +4,39 @@ class WritePost extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            title : '',
             content : '',
-        };
+            style : this.props.style
+        }
+        ;
         this.handleClick = this.handleClick.bind(this);
         this.handleChange = this.handleChange.bind(this);
+
     }
+
+    componentDidMount() {
+        this.textarea.focus();
+    }
+
     handleClick() {
-        return this.props.handleWriteOrModify(this.state).then(
-            (success) => {
-                if(success) {
-                    this.setState({title : '', content : ''});
-                }
-            }
-        )
+        let coords = this.textarea.getBoundingClientRect();
+        return this.props.handleWrite(this.state, coords.left, coords.top);
+
     }
-    componentWillReceiveProps(nextProps) {
-        if(nextProps.post) {
-            this.setState({title : nextProps.post.title, content : nextProps.post.content});
-        } else if(this.props.post) {
-            this.setState({title : '', content : ''})
-        }
-    }
+
     handleChange(e) {
         let nextState = {};
         nextState[e.target.name] = e.target.value;
         this.setState(nextState);
+        e.target.style.cssText ='height:auto; padding:0';
+        e.target.style.cssText ='height:'+e.target.scrollHeight+'px';
     }
     render() {
+
         return (
-            <div>
-                <textarea onChange={this.handleChange} value={this.state.title} name='title' placeholder='제목' />
-                <br />
-                <textarea onChange={this.handleChange} value={this.state.content} name='content' placeholder='내용' />
-                <br />
+            <div className='writepost' style={this.props.style}>
+                <div>
+                    <textarea ref={(textarea)=>{this.textarea = textarea;}} onChange={this.handleChange} value={this.state.content} name='content' placeholder='내용' />
+                </div>
                 <button onClick={this.handleClick}>글쓰기</button>
             </div>
         )

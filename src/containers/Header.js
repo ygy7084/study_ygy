@@ -1,142 +1,73 @@
 import React from 'react';
-import { Header_default, Header_loggedIn, Header_loginAndSignup } from '../components';
-import { loginRequest, signupRequest, sessionRequest, logoutRequest, removeRequest } from '../actions/account';
+import { sessionRequest } from '../actions/account';
+import { writeRequest } from '../actions/post'
 import { connect } from 'react-redux';
+import { Header_User, WritePost} from '../components';
 
 class Header extends React.Component{
     constructor(props) {
         super(props);
         this.state = {
-            view_status : 'DEFAULT'
+            write : false
         };
-        this.handleView = this.handleView.bind(this);
-        this.handleLogin = this.handleLogin.bind(this);
-        this.handleLogout = this.handleLogout.bind(this);
-        this.handleSignup = this.handleSignup.bind(this);
-        this.handleRemove = this.handleRemove.bind(this);
 
+        this.handleWrite = this.handleWrite.bind(this);
+        this.handleClick = this.handleClick.bind(this);
     }
-    handleView(e) {
-        switch(e) {
-            case 'Header_default_login' :
-                this.setState({
-                    view_status : 'LOGIN'
-                });
-                break;
-            case 'Header_default_signup' :
-                this.setState({
-                    view_status : 'SIGNUP'
-                });
-                break;
-            case 'Header_loginAndSignup_no' :
-                this.setState({
-                    view_status : 'DEFAULT'
-                });
-                break;
-            default :
-                break;
-        }
-    }
-    handleLogin() {
-        let returnURI = encodeURIComponent(document.URL);
-        return this.props.loginRequest(returnURI).then(
-            () => {
-                return this.props.login_status === 'SUCCESS';
-            }
-        );
-    }
-    handleLogout() {
-        return this.props.logoutRequest().then(
-            () => {
-                this.props.sessionRequest();
-            }
-        );
-    }
-    handleSignup(username, password) {
-        return this.props.signupRequest(username, password).then(
-            () => {
-                if(this.props.signup_status === 'SUCCESS') {
-                    this.handleLogin(username, password);
-                    return true;
-                }
-                else {
-                    return false;
+    handleWrite(post, x, y) {
+        this.setState({write : !this.state.write});
+        let request = {
+            body : {
+                content : post.content,
+                writer : this.props.session.currentUser,
+                coords : {
+                    x:x,
+                    y:y
                 }
             }
-        )
-    }
-    handleRemove() {
-        return this.props.removeRequest(this.props.session_currentUser).then(
-            () => {
-                return this.props.remove_status === 'SUCCESS';
+        };
+        return this.props.writeRequest(request).then(() => {
+            if(this.props.write.status === 'SUCCESS') {
+                return true;
             }
-        )
-    }
-    componentWillReceiveProps(nextProps) {
-        if(nextProps.session_currentUser) {
-            this.setState({
-                view_status : 'LOGGED_IN'
-            });
-        } else {
-            if(this.state.view_status === 'LOGGED_IN'){
-                this.setState({
-                    view_status : 'DEFAULT'
-                });
+            else {
+                $.notify('글쓰기 에러');
+                return false;
             }
-        }
+        });
+    }
+    handleClick() {
+        this.setState({write : !this.state.write});
     }
     render() {
-        let header;
-        switch(this.state.view_status) {
-            case 'DEFAULT' :
-                header = <Header_default handleView = {this.handleView}/>;
-                break;
-            case 'LOGGED_IN' :
-                header = <Header_loggedIn session_currentUser = {this.props.session_currentUser} onLogout = {this.handleLogout} onRemove = {this.handleRemove}/>;
-                break;
-            case 'LOGIN'  :
-            case 'SIGNUP' :
-                header = <Header_loginAndSignup handleView = {this.handleView} loginOrSignup = {this.state.view_status} onLogin = {this.handleLogin} onSignup = {this.handleSignup}/>;
-                break;
-            default :
-                header = <Header_default handleView = {this.handleView}/>;
-        }
-
         return (
             <div className = 'header'>
-                <a href='/auth/login'>Login</a>
-                { header }
+                {this.props.session.currentUser ? <a className='writepost_button' onClick={this.handleClick}>Write</a>: null}
+                <Header_User user={this.props.session.currentUser}/>
+                {this.state.write ? <WritePost handleWrite={this.handleWrite} /> : null}
             </div>
         );
     }
 }
 const mapStateToProps = (state) => {
     return {
-        login_status : state.account.login.status,
-        signup_status : state.account.signup.status,
-        remove_status : state.account.remove.status,
-        session_currentUser : state.account.session.currentUser
+        session : {
+            currentUser : state.account.session.currentUser
+        },
+        write : {
+            status : state.post.write.status,
+            id : state.post.write.id
+        },
     };
 };
 const mapDispatchToProps = (dispatch) => {
     return {
-        // loginRequest : (username, password) => {
-        //     return dispatch(loginRequest(username, password));
-        // }
-        loginRequest : (returnURI) => {
-            return dispatch(loginRequest(returnURI));
-        },
-        signupRequest : (username, password) => {
-            return dispatch(signupRequest(username, password));
-        },
         sessionRequest : () => {
             return dispatch(sessionRequest());
         },
-        logoutRequest : () => {
-            return dispatch(logoutRequest());
-        },
-        removeRequest : (username) => {
-            return dispatch(removeRequest(username));
+        writeRequest : (request) => {
+            console.log('writeRequest called');
+            return dispatch(writeRequest(request));
         }
     };
 };

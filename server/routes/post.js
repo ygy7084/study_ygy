@@ -3,13 +3,26 @@ import Post from '../models/post';
 
 const router = express.Router();
 
-//routes
+function _idToid(obj) {
+    if(obj && obj._id) {
+        obj.id = obj._id;
+        delete obj._id;
+    }
+    return obj;
+}
+
 router.get('/loadList', (req,res) => {
-    Post.find({}, (err, list) => {
+    Post.find({}).lean().exec((err, list) => {
         if(err) {
-            return res.json({success : false});
+            throw err;
         } else {
-            if(!list || list.length === 0 )
+            if(list && Array.isArray(list)) {
+                list.map((obj) => {
+                    _idToid(obj);
+                    _idToid(obj.writer);
+                    return obj;
+                });
+            } else
                 list = [];
             return res.json({
                 success : true,
@@ -19,47 +32,75 @@ router.get('/loadList', (req,res) => {
     });
 });
 
-/*
 router.get('/load/:id', (req,res) => {
-    Post.find({_id:req.params.id}, (err, data) => {
-        if(data == undefined) {
-            data = {
-                username:'error',
-                title:'error',
-                content:'error'
-            }
+    Post.find({_id:req.params.id}).lean().exec((err, post) => {
+        if(err) {
+            throw err;
+        } else {
+            if(!post)
+                post = [];
+            if(!Array.isArray(post))
+                post = [post];
+            post.map((obj) => {
+                _idToid(obj);
+                _idToid(obj.writer);
+                return obj;
+            });
+            return res.json({
+                success : true,
+                post
+            })
         }
-        res.send(data[0]);
     });
 });
-*/
 
 router.post('/write',(req,res) => {
     let post = new Post({
-        title : req.body.title,
         content : req.body.content,
         time : new Date(),
-        username : req.body.username
+        writer : {
+            _id : req.body.writer.id,
+            displayName : req.body.writer.displayName
+        },
+        coords : req.body.coords
     });
-    post.save((err,data) => {
+    post.save((err,post) => {
         if(err) throw err;
+
+        post = JSON.parse(JSON.stringify(post));
+        //because function lean is not available at 'post.save()'
+        _idToid(post);
+        _idToid(post.writer);
         return res.json({
             success : true,
-            _id : data._id
-        });
+            post
+        })
     });
 });
 
-router.put('/modify', (req,res) => {
-    Post.update({_id:req.body._id},{$set: {title:req.body.title,content:req.body.content}},(err) => {
+router.put('/modify/:mode', (req,res) => {
+    let mode = req.params.mode;
+    let body = {};
+
+    if(mode === 'coords')
+        body = {
+            coords : req.body.coords
+        };
+    else if(mode === 'content')
+        body = {
+            content : req.body.content
+        };
+
+    Post.update({_id:req.body.id}, {$set: body}, (err) => {
         if(err) throw err;
         else
-            return res.json({success : true});
+            return res.json({success:true});
+
     });
 });
 
 router.delete('/remove', (req,res) => {
-    Post.remove({_id:req.body._id},(err) => {
+    Post.remove({_id:req.body.id},(err) => {
         if(err) throw err;
         else
             return res.json({success : true})

@@ -1,6 +1,4 @@
-/**
- * Created by 1nept on 2017-01-12.
- */
+
 'use strict';
 
 import express from 'express';
@@ -20,10 +18,11 @@ import api from './routes';
 const app = express();
 const port = configure.PORT;
 const db = mongoose.connection;
-db.on('error', console.error);
-db.once('open', () => {console.log('Hi mongodb')});
 mongoose.connect(configure.MONGO_URL);
 mongoose.Promise = global.Promise;
+
+db.on('error', console.error);
+db.once('open', () => {console.log('Hi mongodb')});
 
 app.use(cookie_parser());
 app.use(bodyParser.urlencoded({ extended: true }));

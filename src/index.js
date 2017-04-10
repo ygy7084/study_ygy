@@ -1,3 +1,9 @@
+import Promise from 'promise-polyfill';
+if (!window.Promise) {
+    window.Promise = Promise;
+} // Promise explorer 호환
+import 'whatwg-fetch'; // fetch explorer 호환
+
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Router, Route, browserHistory, IndexRoute } from 'react-router';

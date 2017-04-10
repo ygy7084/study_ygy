@@ -3,7 +3,7 @@ var path = require('path');
 var webpack = require('webpack');
 
 module.exports = {
-    entry : ['babel-polyfill','./src/index.js','./src/style.css'],
+    entry : ['babel-polyfill','whatwg-fetch', 'react','react-dom','./src/index.js','./src/style.css'],
     output : {
         path: __dirname + '/public/',
         filename: 'bundle.js'

@@ -4,16 +4,22 @@ import express from 'express';
 import configure from '../configure';
 import passport from 'passport';
 import passport_google_oauth20 from 'passport-google-oauth20';
+import Account from '../models/account';
 
 function extractProfile(profile) {
     let imageUrl = '';
-    if(profile.photos && profile.photos.length) {
+    if(profile.photos && profile.photos.length)
         imageUrl = profile.photos[0].value;
-    }
+
+    let email = '';
+    if(profile.emails && profile.emails.length)
+        email = profile.emails[0].value;
+
     return {
         id : profile.id,
         displayName : profile.displayName,
-        image : imageUrl
+        image : imageUrl,
+        email : email
     };
 }
 let GoogleStrategy = passport_google_oauth20.Strategy;
@@ -43,12 +49,6 @@ function authRequired(req, res, next) {
         req.session.oauth2return = req.originalUrl;
         return res.redirect('/auth/login');
     }
-    next();
-}
-function addTemplateVariables(req, res, next) {
-    res.locals.profile = req.user;
-    res.locals.login = `/auth/login?return=${encodeURIComponent((req.originalUrl))}`;
-    res.locals.logout = `/auth/logout?return=${encodeURIComponent((req.originalUrl))}`;
     next();
 }
 // [END middleware]
@@ -83,6 +83,21 @@ router.get(
     (req,res) => {
         const redirect = req.session.oauth2return || '/';
         delete req.session.oauth2return;
+        if(req.user) {
+            Account.find({_id:req.user.id}, (err, account) => {
+               if(!account || !account.length) {
+                   let new_account = new Account({
+                       _id : req.user.id,
+                       displayName : req.user.displayName,
+                       email : req.user.email,
+                       time : new Date()
+                   });
+                   new_account.save((err) => {
+                       if(err) throw err;
+                   });
+               }
+            });
+        }
         res.redirect(redirect);
     }
 );
@@ -96,7 +111,6 @@ router.get('/auth/logout', (req, res) => {
 export default {
     extractProfile : extractProfile,
     router : router,
-    required : authRequired,
-    template : addTemplateVariables
+    required : authRequired
 };
 

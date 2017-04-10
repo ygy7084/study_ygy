@@ -4,15 +4,15 @@ import update from 'react-addons-update';
 const initialState = {
     loadList : {
         status : 'INIT',
-        list : []
+        list : null
     },
-    /*
     load : {
-        status : 'INIT'
-    },*/
+        status : 'INIT',
+        post : null
+    },
     write : {
         status : 'INIT',
-        _id : undefined
+        id : null
     },
     modify : {
         status : 'INIT'
@@ -43,6 +43,25 @@ export default function post(state = initialState, action) {
                     status : { $set : 'FAILURE' }
                 }
             });
+        case types.POST_LOAD :
+            return update(state, {
+                load : {
+                    status : { $set : 'WAITING' }
+                }
+            });
+        case types.POST_LOAD_SUCCESS :
+            return update(state, {
+                load : {
+                    status : { $set : 'SUCCESS' },
+                    post : { $set : action.post }
+                }
+            });
+        case types.POST_LOAD_FAILURE :
+            return update(state, {
+                load : {
+                    status : { $set : 'FAILURE' }
+                }
+            });
         case types.POST_WRITE :
             return update(state, {
                 write : {
@@ -53,7 +72,12 @@ export default function post(state = initialState, action) {
             return update(state, {
                 write : {
                     status : { $set : 'SUCCESS' },
-                    _id : { $set : action._id }
+                    id : { $set : action.post.id }
+                },
+                loadList : {
+                    list : {
+                        $push : [action.post]
+                    }
                 }
             });
         case types.POST_WRITE_FAILURE :
@@ -72,6 +96,11 @@ export default function post(state = initialState, action) {
             return update(state, {
                 modify : {
                     status : { $set : 'SUCCESS' }
+                },
+                loadList : {
+                    list : {
+                        [action.index] : {$merge : action.post}
+                    }
                 }
             });
         case types.POST_MODIFY_FAILURE :
@@ -90,6 +119,11 @@ export default function post(state = initialState, action) {
             return update(state, {
                 remove : {
                     status : { $set : 'SUCCESS'}
+                },
+                loadList : {
+                    list : {
+                        $splice : [[action.index, 1]]
+                    }
                 }
             });
         case types.POST_REMOVE_FAILURE :

@@ -1,5 +1,21 @@
+::-webkit-input-placeholder {
+    text-align: center;
+}
+
+:-moz-placeholder { /* Firefox 18- */
+    text-align: center;
+}
+
+::-moz-placeholder {  /* Firefox 19+ */
+    text-align: center;
+}
+
+:-ms-input-placeholder {
+    text-align: center;
+}
+
 body {
-    margin:0px;
+    margin:0;
 }
 * {
     box-sizing: border-box;
@@ -10,42 +26,102 @@ body {
     width: 50%;
 }
 .header {
-    text-align: center;
-    padding:30px
-}
-textarea{
     width:100%;
-    resize: none;
-}
-li {
-    list-style: none;
-}
-li:hover {
-    cursor:pointer;
-    color:blue;
-}
-.li_mine {
-    color:red;
-}
-.header_inputs{
-    width:100px;
-    height:20px;
-}
+    left: 0;
+    right: 0;
+    position : fixed;
+    text-align: center;
+    padding:10px;
+    margin : auto;
 
-
-#header_user:hover {
+}
+.header a {
     cursor: pointer;
-    color:red;
+}
+.header .writepost_button {
+}
+.header .username {
+    position:fixed;
+    right:0
+}
+textarea {
+    width : 200px;
+    height:auto;
+    padding:0;
+    resize:none;
+    border:none;
+    outline:none;
+    -webkit-box-shadow:none;
+    -moz-box-shadow:none;
+    box-shadow:none;
+    overflow-y:hidden;
+    font-size:1.2em;
+    background-color :transparent;
+}
+.writepost {
+
+}
+.writepost textarea{
+    padding : 5px;
+    text-align: left;
+    border-bottom : 1px solid white;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+
+    transition-duration: 0.5s;
+    -o-transition-duration: 0.5s;
+    -moz-transition-duration: 0.5s;
+    -webkit-transition-duration: 0.5s;
+}
+.writepost textarea:focus {
+    border-bottom : 1px solid black;
 }
 
-#post_title{
+.writepost button {
+    background:none;
+    font-size:1em;
+    cursor: pointer;
+    border: 1px solid white;
 
+    transition-duration: 0.3s;
+    -o-transition-duration: 0.3s;
+    -moz-transition-duration: 0.3s;
+    -webkit-transition-duration: 0.3s;
+}
+.writepost button:hover {
+    border : 1px solid black;
 }
 
-.draggable {
 
-    -webkit-transform: translate(0px, 0px);
-    transform: translate(0px, 0px);
-    -ms-touch-action: none;
-    touch-action: none;
+.post {
+    display:inline-block;
+    position:absolute;
+    padding:2px;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+.post:hover {
+    border: 1px solid black;
+}
+.post:focus {
+    border: 1px solid black;
+}
+.post.mine {
+}
+.post.mine:hover {
+    border: 1px solid blue;
+}
+.post.notmine textarea {
+    cursor: pointer
+}
+.posthead .writer {
+    display: inline-block;
+}
+.posthead .delete {
+    display:inline-block;
+    float:right;
+}
+.posthead .delete:hover {
+    color:red
 }

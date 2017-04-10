@@ -46,7 +46,10 @@
 
 	__webpack_require__(1);
 	__webpack_require__(298);
-	module.exports = __webpack_require__(587);
+	__webpack_require__(299);
+	__webpack_require__(329);
+	__webpack_require__(475);
+	module.exports = __webpack_require__(589);
 
 
 /***/ },
@@ -8191,53 +8194,470 @@
 
 /***/ },
 /* 298 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
-	'use strict';
+	(function(self) {
+	  'use strict';
 
-	var _react = __webpack_require__(299);
+	  if (self.fetch) {
+	    return
+	  }
 
-	var _react2 = _interopRequireDefault(_react);
+	  var support = {
+	    searchParams: 'URLSearchParams' in self,
+	    iterable: 'Symbol' in self && 'iterator' in Symbol,
+	    blob: 'FileReader' in self && 'Blob' in self && (function() {
+	      try {
+	        new Blob()
+	        return true
+	      } catch(e) {
+	        return false
+	      }
+	    })(),
+	    formData: 'FormData' in self,
+	    arrayBuffer: 'ArrayBuffer' in self
+	  }
 
-	var _reactDom = __webpack_require__(329);
+	  if (support.arrayBuffer) {
+	    var viewClasses = [
+	      '[object Int8Array]',
+	      '[object Uint8Array]',
+	      '[object Uint8ClampedArray]',
+	      '[object Int16Array]',
+	      '[object Uint16Array]',
+	      '[object Int32Array]',
+	      '[object Uint32Array]',
+	      '[object Float32Array]',
+	      '[object Float64Array]'
+	    ]
 
-	var _reactDom2 = _interopRequireDefault(_reactDom);
+	    var isDataView = function(obj) {
+	      return obj && DataView.prototype.isPrototypeOf(obj)
+	    }
 
-	var _reactRouter = __webpack_require__(475);
+	    var isArrayBufferView = ArrayBuffer.isView || function(obj) {
+	      return obj && viewClasses.indexOf(Object.prototype.toString.call(obj)) > -1
+	    }
+	  }
 
-	var _containers = __webpack_require__(530);
+	  function normalizeName(name) {
+	    if (typeof name !== 'string') {
+	      name = String(name)
+	    }
+	    if (/[^a-z0-9\-#$%&'*+.\^_`|~]/i.test(name)) {
+	      throw new TypeError('Invalid character in header field name')
+	    }
+	    return name.toLowerCase()
+	  }
 
-	var _reactRedux = __webpack_require__(534);
+	  function normalizeValue(value) {
+	    if (typeof value !== 'string') {
+	      value = String(value)
+	    }
+	    return value
+	  }
 
-	var _redux = __webpack_require__(543);
+	  // Build a destructive iterator for the value list
+	  function iteratorFor(items) {
+	    var iterator = {
+	      next: function() {
+	        var value = items.shift()
+	        return {done: value === undefined, value: value}
+	      }
+	    }
 
-	var _reducers = __webpack_require__(581);
+	    if (support.iterable) {
+	      iterator[Symbol.iterator] = function() {
+	        return iterator
+	      }
+	    }
 
-	var _reducers2 = _interopRequireDefault(_reducers);
+	    return iterator
+	  }
 
-	var _reduxThunk = __webpack_require__(586);
+	  function Headers(headers) {
+	    this.map = {}
 
-	var _reduxThunk2 = _interopRequireDefault(_reduxThunk);
+	    if (headers instanceof Headers) {
+	      headers.forEach(function(value, name) {
+	        this.append(name, value)
+	      }, this)
+	    } else if (Array.isArray(headers)) {
+	      headers.forEach(function(header) {
+	        this.append(header[0], header[1])
+	      }, this)
+	    } else if (headers) {
+	      Object.getOwnPropertyNames(headers).forEach(function(name) {
+	        this.append(name, headers[name])
+	      }, this)
+	    }
+	  }
 
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	  Headers.prototype.append = function(name, value) {
+	    name = normalizeName(name)
+	    value = normalizeValue(value)
+	    var oldValue = this.map[name]
+	    this.map[name] = oldValue ? oldValue+','+value : value
+	  }
 
-	var store = (0, _redux.createStore)(_reducers2.default, (0, _redux.applyMiddleware)(_reduxThunk2.default));
+	  Headers.prototype['delete'] = function(name) {
+	    delete this.map[normalizeName(name)]
+	  }
 
-	var rootElement = document.getElementById('root');
+	  Headers.prototype.get = function(name) {
+	    name = normalizeName(name)
+	    return this.has(name) ? this.map[name] : null
+	  }
 
-	_reactDom2.default.render(_react2.default.createElement(
-	    _reactRedux.Provider,
-	    { store: store },
-	    _react2.default.createElement(
-	        _reactRouter.Router,
-	        { history: _reactRouter.browserHistory },
-	        _react2.default.createElement(
-	            _reactRouter.Route,
-	            { path: '/', component: _containers.App },
-	            _react2.default.createElement(_reactRouter.IndexRoute, { component: _containers.Home })
-	        )
-	    )
-	), rootElement);
+	  Headers.prototype.has = function(name) {
+	    return this.map.hasOwnProperty(normalizeName(name))
+	  }
+
+	  Headers.prototype.set = function(name, value) {
+	    this.map[normalizeName(name)] = normalizeValue(value)
+	  }
+
+	  Headers.prototype.forEach = function(callback, thisArg) {
+	    for (var name in this.map) {
+	      if (this.map.hasOwnProperty(name)) {
+	        callback.call(thisArg, this.map[name], name, this)
+	      }
+	    }
+	  }
+
+	  Headers.prototype.keys = function() {
+	    var items = []
+	    this.forEach(function(value, name) { items.push(name) })
+	    return iteratorFor(items)
+	  }
+
+	  Headers.prototype.values = function() {
+	    var items = []
+	    this.forEach(function(value) { items.push(value) })
+	    return iteratorFor(items)
+	  }
+
+	  Headers.prototype.entries = function() {
+	    var items = []
+	    this.forEach(function(value, name) { items.push([name, value]) })
+	    return iteratorFor(items)
+	  }
+
+	  if (support.iterable) {
+	    Headers.prototype[Symbol.iterator] = Headers.prototype.entries
+	  }
+
+	  function consumed(body) {
+	    if (body.bodyUsed) {
+	      return Promise.reject(new TypeError('Already read'))
+	    }
+	    body.bodyUsed = true
+	  }
+
+	  function fileReaderReady(reader) {
+	    return new Promise(function(resolve, reject) {
+	      reader.onload = function() {
+	        resolve(reader.result)
+	      }
+	      reader.onerror = function() {
+	        reject(reader.error)
+	      }
+	    })
+	  }
+
+	  function readBlobAsArrayBuffer(blob) {
+	    var reader = new FileReader()
+	    var promise = fileReaderReady(reader)
+	    reader.readAsArrayBuffer(blob)
+	    return promise
+	  }
+
+	  function readBlobAsText(blob) {
+	    var reader = new FileReader()
+	    var promise = fileReaderReady(reader)
+	    reader.readAsText(blob)
+	    return promise
+	  }
+
+	  function readArrayBufferAsText(buf) {
+	    var view = new Uint8Array(buf)
+	    var chars = new Array(view.length)
+
+	    for (var i = 0; i < view.length; i++) {
+	      chars[i] = String.fromCharCode(view[i])
+	    }
+	    return chars.join('')
+	  }
+
+	  function bufferClone(buf) {
+	    if (buf.slice) {
+	      return buf.slice(0)
+	    } else {
+	      var view = new Uint8Array(buf.byteLength)
+	      view.set(new Uint8Array(buf))
+	      return view.buffer
+	    }
+	  }
+
+	  function Body() {
+	    this.bodyUsed = false
+
+	    this._initBody = function(body) {
+	      this._bodyInit = body
+	      if (!body) {
+	        this._bodyText = ''
+	      } else if (typeof body === 'string') {
+	        this._bodyText = body
+	      } else if (support.blob && Blob.prototype.isPrototypeOf(body)) {
+	        this._bodyBlob = body
+	      } else if (support.formData && FormData.prototype.isPrototypeOf(body)) {
+	        this._bodyFormData = body
+	      } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
+	        this._bodyText = body.toString()
+	      } else if (support.arrayBuffer && support.blob && isDataView(body)) {
+	        this._bodyArrayBuffer = bufferClone(body.buffer)
+	        // IE 10-11 can't handle a DataView body.
+	        this._bodyInit = new Blob([this._bodyArrayBuffer])
+	      } else if (support.arrayBuffer && (ArrayBuffer.prototype.isPrototypeOf(body) || isArrayBufferView(body))) {
+	        this._bodyArrayBuffer = bufferClone(body)
+	      } else {
+	        throw new Error('unsupported BodyInit type')
+	      }
+
+	      if (!this.headers.get('content-type')) {
+	        if (typeof body === 'string') {
+	          this.headers.set('content-type', 'text/plain;charset=UTF-8')
+	        } else if (this._bodyBlob && this._bodyBlob.type) {
+	          this.headers.set('content-type', this._bodyBlob.type)
+	        } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
+	          this.headers.set('content-type', 'application/x-www-form-urlencoded;charset=UTF-8')
+	        }
+	      }
+	    }
+
+	    if (support.blob) {
+	      this.blob = function() {
+	        var rejected = consumed(this)
+	        if (rejected) {
+	          return rejected
+	        }
+
+	        if (this._bodyBlob) {
+	          return Promise.resolve(this._bodyBlob)
+	        } else if (this._bodyArrayBuffer) {
+	          return Promise.resolve(new Blob([this._bodyArrayBuffer]))
+	        } else if (this._bodyFormData) {
+	          throw new Error('could not read FormData body as blob')
+	        } else {
+	          return Promise.resolve(new Blob([this._bodyText]))
+	        }
+	      }
+
+	      this.arrayBuffer = function() {
+	        if (this._bodyArrayBuffer) {
+	          return consumed(this) || Promise.resolve(this._bodyArrayBuffer)
+	        } else {
+	          return this.blob().then(readBlobAsArrayBuffer)
+	        }
+	      }
+	    }
+
+	    this.text = function() {
+	      var rejected = consumed(this)
+	      if (rejected) {
+	        return rejected
+	      }
+
+	      if (this._bodyBlob) {
+	        return readBlobAsText(this._bodyBlob)
+	      } else if (this._bodyArrayBuffer) {
+	        return Promise.resolve(readArrayBufferAsText(this._bodyArrayBuffer))
+	      } else if (this._bodyFormData) {
+	        throw new Error('could not read FormData body as text')
+	      } else {
+	        return Promise.resolve(this._bodyText)
+	      }
+	    }
+
+	    if (support.formData) {
+	      this.formData = function() {
+	        return this.text().then(decode)
+	      }
+	    }
+
+	    this.json = function() {
+	      return this.text().then(JSON.parse)
+	    }
+
+	    return this
+	  }
+
+	  // HTTP methods whose capitalization should be normalized
+	  var methods = ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'POST', 'PUT']
+
+	  function normalizeMethod(method) {
+	    var upcased = method.toUpperCase()
+	    return (methods.indexOf(upcased) > -1) ? upcased : method
+	  }
+
+	  function Request(input, options) {
+	    options = options || {}
+	    var body = options.body
+
+	    if (input instanceof Request) {
+	      if (input.bodyUsed) {
+	        throw new TypeError('Already read')
+	      }
+	      this.url = input.url
+	      this.credentials = input.credentials
+	      if (!options.headers) {
+	        this.headers = new Headers(input.headers)
+	      }
+	      this.method = input.method
+	      this.mode = input.mode
+	      if (!body && input._bodyInit != null) {
+	        body = input._bodyInit
+	        input.bodyUsed = true
+	      }
+	    } else {
+	      this.url = String(input)
+	    }
+
+	    this.credentials = options.credentials || this.credentials || 'omit'
+	    if (options.headers || !this.headers) {
+	      this.headers = new Headers(options.headers)
+	    }
+	    this.method = normalizeMethod(options.method || this.method || 'GET')
+	    this.mode = options.mode || this.mode || null
+	    this.referrer = null
+
+	    if ((this.method === 'GET' || this.method === 'HEAD') && body) {
+	      throw new TypeError('Body not allowed for GET or HEAD requests')
+	    }
+	    this._initBody(body)
+	  }
+
+	  Request.prototype.clone = function() {
+	    return new Request(this, { body: this._bodyInit })
+	  }
+
+	  function decode(body) {
+	    var form = new FormData()
+	    body.trim().split('&').forEach(function(bytes) {
+	      if (bytes) {
+	        var split = bytes.split('=')
+	        var name = split.shift().replace(/\+/g, ' ')
+	        var value = split.join('=').replace(/\+/g, ' ')
+	        form.append(decodeURIComponent(name), decodeURIComponent(value))
+	      }
+	    })
+	    return form
+	  }
+
+	  function parseHeaders(rawHeaders) {
+	    var headers = new Headers()
+	    rawHeaders.split(/\r?\n/).forEach(function(line) {
+	      var parts = line.split(':')
+	      var key = parts.shift().trim()
+	      if (key) {
+	        var value = parts.join(':').trim()
+	        headers.append(key, value)
+	      }
+	    })
+	    return headers
+	  }
+
+	  Body.call(Request.prototype)
+
+	  function Response(bodyInit, options) {
+	    if (!options) {
+	      options = {}
+	    }
+
+	    this.type = 'default'
+	    this.status = 'status' in options ? options.status : 200
+	    this.ok = this.status >= 200 && this.status < 300
+	    this.statusText = 'statusText' in options ? options.statusText : 'OK'
+	    this.headers = new Headers(options.headers)
+	    this.url = options.url || ''
+	    this._initBody(bodyInit)
+	  }
+
+	  Body.call(Response.prototype)
+
+	  Response.prototype.clone = function() {
+	    return new Response(this._bodyInit, {
+	      status: this.status,
+	      statusText: this.statusText,
+	      headers: new Headers(this.headers),
+	      url: this.url
+	    })
+	  }
+
+	  Response.error = function() {
+	    var response = new Response(null, {status: 0, statusText: ''})
+	    response.type = 'error'
+	    return response
+	  }
+
+	  var redirectStatuses = [301, 302, 303, 307, 308]
+
+	  Response.redirect = function(url, status) {
+	    if (redirectStatuses.indexOf(status) === -1) {
+	      throw new RangeError('Invalid status code')
+	    }
+
+	    return new Response(null, {status: status, headers: {location: url}})
+	  }
+
+	  self.Headers = Headers
+	  self.Request = Request
+	  self.Response = Response
+
+	  self.fetch = function(input, init) {
+	    return new Promise(function(resolve, reject) {
+	      var request = new Request(input, init)
+	      var xhr = new XMLHttpRequest()
+
+	      xhr.onload = function() {
+	        var options = {
+	          status: xhr.status,
+	          statusText: xhr.statusText,
+	          headers: parseHeaders(xhr.getAllResponseHeaders() || '')
+	        }
+	        options.url = 'responseURL' in xhr ? xhr.responseURL : options.headers.get('X-Request-URL')
+	        var body = 'response' in xhr ? xhr.response : xhr.responseText
+	        resolve(new Response(body, options))
+	      }
+
+	      xhr.onerror = function() {
+	        reject(new TypeError('Network request failed'))
+	      }
+
+	      xhr.ontimeout = function() {
+	        reject(new TypeError('Network request failed'))
+	      }
+
+	      xhr.open(request.method, request.url, true)
+
+	      if (request.credentials === 'include') {
+	        xhr.withCredentials = true
+	      }
+
+	      if ('responseType' in xhr && support.blob) {
+	        xhr.responseType = 'blob'
+	      }
+
+	      request.headers.forEach(function(value, name) {
+	        xhr.setRequestHeader(name, value)
+	      })
+
+	      xhr.send(typeof request._bodyInit === 'undefined' ? null : request._bodyInit)
+	    })
+	  }
+	  self.fetch.polyfill = true
+	})(typeof self !== 'undefined' ? self : this);
+
 
 /***/ },
 /* 299 */
@@ -29486,10 +29906,563 @@
 
 	'use strict';
 
+	var _promisePolyfill = __webpack_require__(476);
+
+	var _promisePolyfill2 = _interopRequireDefault(_promisePolyfill);
+
+	__webpack_require__(298);
+
+	var _react = __webpack_require__(299);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _reactDom = __webpack_require__(329);
+
+	var _reactDom2 = _interopRequireDefault(_reactDom);
+
+	var _reactRouter = __webpack_require__(479);
+
+	var _containers = __webpack_require__(534);
+
+	var _reactRedux = __webpack_require__(538);
+
+	var _redux = __webpack_require__(547);
+
+	var _reducers = __webpack_require__(583);
+
+	var _reducers2 = _interopRequireDefault(_reducers);
+
+	var _reduxThunk = __webpack_require__(588);
+
+	var _reduxThunk2 = _interopRequireDefault(_reduxThunk);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	if (!window.Promise) {
+	    window.Promise = _promisePolyfill2.default;
+	} // Promise explorer 호환
+	// fetch explorer 호환
+
+	var store = (0, _redux.createStore)(_reducers2.default, (0, _redux.applyMiddleware)(_reduxThunk2.default));
+
+	var rootElement = document.getElementById('root');
+
+	_reactDom2.default.render(_react2.default.createElement(
+	    _reactRedux.Provider,
+	    { store: store },
+	    _react2.default.createElement(
+	        _reactRouter.Router,
+	        { history: _reactRouter.browserHistory },
+	        _react2.default.createElement(
+	            _reactRouter.Route,
+	            { path: '/', component: _containers.App },
+	            _react2.default.createElement(_reactRouter.IndexRoute, { component: _containers.Home })
+	        )
+	    )
+	), rootElement);
+
+/***/ },
+/* 476 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(setImmediate) {(function (root) {
+
+	  // Store setTimeout reference so promise-polyfill will be unaffected by
+	  // other code modifying setTimeout (like sinon.useFakeTimers())
+	  var setTimeoutFunc = setTimeout;
+
+	  function noop() {}
+	  
+	  // Polyfill for Function.prototype.bind
+	  function bind(fn, thisArg) {
+	    return function () {
+	      fn.apply(thisArg, arguments);
+	    };
+	  }
+
+	  function Promise(fn) {
+	    if (typeof this !== 'object') throw new TypeError('Promises must be constructed via new');
+	    if (typeof fn !== 'function') throw new TypeError('not a function');
+	    this._state = 0;
+	    this._handled = false;
+	    this._value = undefined;
+	    this._deferreds = [];
+
+	    doResolve(fn, this);
+	  }
+
+	  function handle(self, deferred) {
+	    while (self._state === 3) {
+	      self = self._value;
+	    }
+	    if (self._state === 0) {
+	      self._deferreds.push(deferred);
+	      return;
+	    }
+	    self._handled = true;
+	    Promise._immediateFn(function () {
+	      var cb = self._state === 1 ? deferred.onFulfilled : deferred.onRejected;
+	      if (cb === null) {
+	        (self._state === 1 ? resolve : reject)(deferred.promise, self._value);
+	        return;
+	      }
+	      var ret;
+	      try {
+	        ret = cb(self._value);
+	      } catch (e) {
+	        reject(deferred.promise, e);
+	        return;
+	      }
+	      resolve(deferred.promise, ret);
+	    });
+	  }
+
+	  function resolve(self, newValue) {
+	    try {
+	      // Promise Resolution Procedure: https://github.com/promises-aplus/promises-spec#the-promise-resolution-procedure
+	      if (newValue === self) throw new TypeError('A promise cannot be resolved with itself.');
+	      if (newValue && (typeof newValue === 'object' || typeof newValue === 'function')) {
+	        var then = newValue.then;
+	        if (newValue instanceof Promise) {
+	          self._state = 3;
+	          self._value = newValue;
+	          finale(self);
+	          return;
+	        } else if (typeof then === 'function') {
+	          doResolve(bind(then, newValue), self);
+	          return;
+	        }
+	      }
+	      self._state = 1;
+	      self._value = newValue;
+	      finale(self);
+	    } catch (e) {
+	      reject(self, e);
+	    }
+	  }
+
+	  function reject(self, newValue) {
+	    self._state = 2;
+	    self._value = newValue;
+	    finale(self);
+	  }
+
+	  function finale(self) {
+	    if (self._state === 2 && self._deferreds.length === 0) {
+	      Promise._immediateFn(function() {
+	        if (!self._handled) {
+	          Promise._unhandledRejectionFn(self._value);
+	        }
+	      });
+	    }
+
+	    for (var i = 0, len = self._deferreds.length; i < len; i++) {
+	      handle(self, self._deferreds[i]);
+	    }
+	    self._deferreds = null;
+	  }
+
+	  function Handler(onFulfilled, onRejected, promise) {
+	    this.onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : null;
+	    this.onRejected = typeof onRejected === 'function' ? onRejected : null;
+	    this.promise = promise;
+	  }
+
+	  /**
+	   * Take a potentially misbehaving resolver function and make sure
+	   * onFulfilled and onRejected are only called once.
+	   *
+	   * Makes no guarantees about asynchrony.
+	   */
+	  function doResolve(fn, self) {
+	    var done = false;
+	    try {
+	      fn(function (value) {
+	        if (done) return;
+	        done = true;
+	        resolve(self, value);
+	      }, function (reason) {
+	        if (done) return;
+	        done = true;
+	        reject(self, reason);
+	      });
+	    } catch (ex) {
+	      if (done) return;
+	      done = true;
+	      reject(self, ex);
+	    }
+	  }
+
+	  Promise.prototype['catch'] = function (onRejected) {
+	    return this.then(null, onRejected);
+	  };
+
+	  Promise.prototype.then = function (onFulfilled, onRejected) {
+	    var prom = new (this.constructor)(noop);
+
+	    handle(this, new Handler(onFulfilled, onRejected, prom));
+	    return prom;
+	  };
+
+	  Promise.all = function (arr) {
+	    var args = Array.prototype.slice.call(arr);
+
+	    return new Promise(function (resolve, reject) {
+	      if (args.length === 0) return resolve([]);
+	      var remaining = args.length;
+
+	      function res(i, val) {
+	        try {
+	          if (val && (typeof val === 'object' || typeof val === 'function')) {
+	            var then = val.then;
+	            if (typeof then === 'function') {
+	              then.call(val, function (val) {
+	                res(i, val);
+	              }, reject);
+	              return;
+	            }
+	          }
+	          args[i] = val;
+	          if (--remaining === 0) {
+	            resolve(args);
+	          }
+	        } catch (ex) {
+	          reject(ex);
+	        }
+	      }
+
+	      for (var i = 0; i < args.length; i++) {
+	        res(i, args[i]);
+	      }
+	    });
+	  };
+
+	  Promise.resolve = function (value) {
+	    if (value && typeof value === 'object' && value.constructor === Promise) {
+	      return value;
+	    }
+
+	    return new Promise(function (resolve) {
+	      resolve(value);
+	    });
+	  };
+
+	  Promise.reject = function (value) {
+	    return new Promise(function (resolve, reject) {
+	      reject(value);
+	    });
+	  };
+
+	  Promise.race = function (values) {
+	    return new Promise(function (resolve, reject) {
+	      for (var i = 0, len = values.length; i < len; i++) {
+	        values[i].then(resolve, reject);
+	      }
+	    });
+	  };
+
+	  // Use polyfill for setImmediate for performance gains
+	  Promise._immediateFn = (typeof setImmediate === 'function' && function (fn) { setImmediate(fn); }) ||
+	    function (fn) {
+	      setTimeoutFunc(fn, 0);
+	    };
+
+	  Promise._unhandledRejectionFn = function _unhandledRejectionFn(err) {
+	    if (typeof console !== 'undefined' && console) {
+	      console.warn('Possible Unhandled Promise Rejection:', err); // eslint-disable-line no-console
+	    }
+	  };
+
+	  /**
+	   * Set the immediate function to execute callbacks
+	   * @param fn {function} Function to execute
+	   * @deprecated
+	   */
+	  Promise._setImmediateFn = function _setImmediateFn(fn) {
+	    Promise._immediateFn = fn;
+	  };
+
+	  /**
+	   * Change the function to execute on unhandled rejection
+	   * @param {function} fn Function to execute on unhandled rejection
+	   * @deprecated
+	   */
+	  Promise._setUnhandledRejectionFn = function _setUnhandledRejectionFn(fn) {
+	    Promise._unhandledRejectionFn = fn;
+	  };
+	  
+	  if (typeof module !== 'undefined' && module.exports) {
+	    module.exports = Promise;
+	  } else if (!root.Promise) {
+	    root.Promise = Promise;
+	  }
+
+	})(this);
+
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(477).setImmediate))
+
+/***/ },
+/* 477 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var apply = Function.prototype.apply;
+
+	// DOM APIs, for completeness
+
+	exports.setTimeout = function() {
+	  return new Timeout(apply.call(setTimeout, window, arguments), clearTimeout);
+	};
+	exports.setInterval = function() {
+	  return new Timeout(apply.call(setInterval, window, arguments), clearInterval);
+	};
+	exports.clearTimeout =
+	exports.clearInterval = function(timeout) {
+	  if (timeout) {
+	    timeout.close();
+	  }
+	};
+
+	function Timeout(id, clearFn) {
+	  this._id = id;
+	  this._clearFn = clearFn;
+	}
+	Timeout.prototype.unref = Timeout.prototype.ref = function() {};
+	Timeout.prototype.close = function() {
+	  this._clearFn.call(window, this._id);
+	};
+
+	// Does not start the time, just sets up the members needed.
+	exports.enroll = function(item, msecs) {
+	  clearTimeout(item._idleTimeoutId);
+	  item._idleTimeout = msecs;
+	};
+
+	exports.unenroll = function(item) {
+	  clearTimeout(item._idleTimeoutId);
+	  item._idleTimeout = -1;
+	};
+
+	exports._unrefActive = exports.active = function(item) {
+	  clearTimeout(item._idleTimeoutId);
+
+	  var msecs = item._idleTimeout;
+	  if (msecs >= 0) {
+	    item._idleTimeoutId = setTimeout(function onTimeout() {
+	      if (item._onTimeout)
+	        item._onTimeout();
+	    }, msecs);
+	  }
+	};
+
+	// setimmediate attaches itself to the global object
+	__webpack_require__(478);
+	exports.setImmediate = setImmediate;
+	exports.clearImmediate = clearImmediate;
+
+
+/***/ },
+/* 478 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(global, process) {(function (global, undefined) {
+	    "use strict";
+
+	    if (global.setImmediate) {
+	        return;
+	    }
+
+	    var nextHandle = 1; // Spec says greater than zero
+	    var tasksByHandle = {};
+	    var currentlyRunningATask = false;
+	    var doc = global.document;
+	    var registerImmediate;
+
+	    function setImmediate(callback) {
+	      // Callback can either be a function or a string
+	      if (typeof callback !== "function") {
+	        callback = new Function("" + callback);
+	      }
+	      // Copy function arguments
+	      var args = new Array(arguments.length - 1);
+	      for (var i = 0; i < args.length; i++) {
+	          args[i] = arguments[i + 1];
+	      }
+	      // Store and register the task
+	      var task = { callback: callback, args: args };
+	      tasksByHandle[nextHandle] = task;
+	      registerImmediate(nextHandle);
+	      return nextHandle++;
+	    }
+
+	    function clearImmediate(handle) {
+	        delete tasksByHandle[handle];
+	    }
+
+	    function run(task) {
+	        var callback = task.callback;
+	        var args = task.args;
+	        switch (args.length) {
+	        case 0:
+	            callback();
+	            break;
+	        case 1:
+	            callback(args[0]);
+	            break;
+	        case 2:
+	            callback(args[0], args[1]);
+	            break;
+	        case 3:
+	            callback(args[0], args[1], args[2]);
+	            break;
+	        default:
+	            callback.apply(undefined, args);
+	            break;
+	        }
+	    }
+
+	    function runIfPresent(handle) {
+	        // From the spec: "Wait until any invocations of this algorithm started before this one have completed."
+	        // So if we're currently running a task, we'll need to delay this invocation.
+	        if (currentlyRunningATask) {
+	            // Delay by doing a setTimeout. setImmediate was tried instead, but in Firefox 7 it generated a
+	            // "too much recursion" error.
+	            setTimeout(runIfPresent, 0, handle);
+	        } else {
+	            var task = tasksByHandle[handle];
+	            if (task) {
+	                currentlyRunningATask = true;
+	                try {
+	                    run(task);
+	                } finally {
+	                    clearImmediate(handle);
+	                    currentlyRunningATask = false;
+	                }
+	            }
+	        }
+	    }
+
+	    function installNextTickImplementation() {
+	        registerImmediate = function(handle) {
+	            process.nextTick(function () { runIfPresent(handle); });
+	        };
+	    }
+
+	    function canUsePostMessage() {
+	        // The test against `importScripts` prevents this implementation from being installed inside a web worker,
+	        // where `global.postMessage` means something completely different and can't be used for this purpose.
+	        if (global.postMessage && !global.importScripts) {
+	            var postMessageIsAsynchronous = true;
+	            var oldOnMessage = global.onmessage;
+	            global.onmessage = function() {
+	                postMessageIsAsynchronous = false;
+	            };
+	            global.postMessage("", "*");
+	            global.onmessage = oldOnMessage;
+	            return postMessageIsAsynchronous;
+	        }
+	    }
+
+	    function installPostMessageImplementation() {
+	        // Installs an event handler on `global` for the `message` event: see
+	        // * https://developer.mozilla.org/en/DOM/window.postMessage
+	        // * http://www.whatwg.org/specs/web-apps/current-work/multipage/comms.html#crossDocumentMessages
+
+	        var messagePrefix = "setImmediate$" + Math.random() + "$";
+	        var onGlobalMessage = function(event) {
+	            if (event.source === global &&
+	                typeof event.data === "string" &&
+	                event.data.indexOf(messagePrefix) === 0) {
+	                runIfPresent(+event.data.slice(messagePrefix.length));
+	            }
+	        };
+
+	        if (global.addEventListener) {
+	            global.addEventListener("message", onGlobalMessage, false);
+	        } else {
+	            global.attachEvent("onmessage", onGlobalMessage);
+	        }
+
+	        registerImmediate = function(handle) {
+	            global.postMessage(messagePrefix + handle, "*");
+	        };
+	    }
+
+	    function installMessageChannelImplementation() {
+	        var channel = new MessageChannel();
+	        channel.port1.onmessage = function(event) {
+	            var handle = event.data;
+	            runIfPresent(handle);
+	        };
+
+	        registerImmediate = function(handle) {
+	            channel.port2.postMessage(handle);
+	        };
+	    }
+
+	    function installReadyStateChangeImplementation() {
+	        var html = doc.documentElement;
+	        registerImmediate = function(handle) {
+	            // Create a <script> element; its readystatechange event will be fired asynchronously once it is inserted
+	            // into the document. Do so, thus queuing up the task. Remember to clean up once it's been called.
+	            var script = doc.createElement("script");
+	            script.onreadystatechange = function () {
+	                runIfPresent(handle);
+	                script.onreadystatechange = null;
+	                html.removeChild(script);
+	                script = null;
+	            };
+	            html.appendChild(script);
+	        };
+	    }
+
+	    function installSetTimeoutImplementation() {
+	        registerImmediate = function(handle) {
+	            setTimeout(runIfPresent, 0, handle);
+	        };
+	    }
+
+	    // If supported, we should attach to the prototype of global, since that is where setTimeout et al. live.
+	    var attachTo = Object.getPrototypeOf && Object.getPrototypeOf(global);
+	    attachTo = attachTo && attachTo.setTimeout ? attachTo : global;
+
+	    // Don't get fooled by e.g. browserify environments.
+	    if ({}.toString.call(global.process) === "[object process]") {
+	        // For Node.js before 0.9
+	        installNextTickImplementation();
+
+	    } else if (canUsePostMessage()) {
+	        // For non-IE10 modern browsers
+	        installPostMessageImplementation();
+
+	    } else if (global.MessageChannel) {
+	        // For web workers, where supported
+	        installMessageChannelImplementation();
+
+	    } else if (doc && "onreadystatechange" in doc.createElement("script")) {
+	        // For IE 6–8
+	        installReadyStateChangeImplementation();
+
+	    } else {
+	        // For older browsers
+	        installSetTimeoutImplementation();
+	    }
+
+	    attachTo.setImmediate = setImmediate;
+	    attachTo.clearImmediate = clearImmediate;
+	}(typeof self === "undefined" ? typeof global === "undefined" ? this : global : self));
+
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(294)))
+
+/***/ },
+/* 479 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
 	exports.__esModule = true;
 	exports.createMemoryHistory = exports.hashHistory = exports.browserHistory = exports.applyRouterMiddleware = exports.formatPattern = exports.useRouterHistory = exports.match = exports.routerShape = exports.locationShape = exports.RouterContext = exports.createRoutes = exports.Route = exports.Redirect = exports.IndexRoute = exports.IndexRedirect = exports.withRouter = exports.IndexLink = exports.Link = exports.Router = undefined;
 
-	var _RouteUtils = __webpack_require__(476);
+	var _RouteUtils = __webpack_require__(480);
 
 	Object.defineProperty(exports, 'createRoutes', {
 	  enumerable: true,
@@ -29498,7 +30471,7 @@
 	  }
 	});
 
-	var _PropTypes = __webpack_require__(477);
+	var _PropTypes = __webpack_require__(481);
 
 	Object.defineProperty(exports, 'locationShape', {
 	  enumerable: true,
@@ -29513,7 +30486,7 @@
 	  }
 	});
 
-	var _PatternUtils = __webpack_require__(478);
+	var _PatternUtils = __webpack_require__(482);
 
 	Object.defineProperty(exports, 'formatPattern', {
 	  enumerable: true,
@@ -29522,63 +30495,63 @@
 	  }
 	});
 
-	var _Router2 = __webpack_require__(480);
+	var _Router2 = __webpack_require__(484);
 
 	var _Router3 = _interopRequireDefault(_Router2);
 
-	var _Link2 = __webpack_require__(496);
+	var _Link2 = __webpack_require__(500);
 
 	var _Link3 = _interopRequireDefault(_Link2);
 
-	var _IndexLink2 = __webpack_require__(497);
+	var _IndexLink2 = __webpack_require__(501);
 
 	var _IndexLink3 = _interopRequireDefault(_IndexLink2);
 
-	var _withRouter2 = __webpack_require__(498);
+	var _withRouter2 = __webpack_require__(502);
 
 	var _withRouter3 = _interopRequireDefault(_withRouter2);
 
-	var _IndexRedirect2 = __webpack_require__(500);
+	var _IndexRedirect2 = __webpack_require__(504);
 
 	var _IndexRedirect3 = _interopRequireDefault(_IndexRedirect2);
 
-	var _IndexRoute2 = __webpack_require__(502);
+	var _IndexRoute2 = __webpack_require__(506);
 
 	var _IndexRoute3 = _interopRequireDefault(_IndexRoute2);
 
-	var _Redirect2 = __webpack_require__(501);
+	var _Redirect2 = __webpack_require__(505);
 
 	var _Redirect3 = _interopRequireDefault(_Redirect2);
 
-	var _Route2 = __webpack_require__(503);
+	var _Route2 = __webpack_require__(507);
 
 	var _Route3 = _interopRequireDefault(_Route2);
 
-	var _RouterContext2 = __webpack_require__(492);
+	var _RouterContext2 = __webpack_require__(496);
 
 	var _RouterContext3 = _interopRequireDefault(_RouterContext2);
 
-	var _match2 = __webpack_require__(504);
+	var _match2 = __webpack_require__(508);
 
 	var _match3 = _interopRequireDefault(_match2);
 
-	var _useRouterHistory2 = __webpack_require__(517);
+	var _useRouterHistory2 = __webpack_require__(521);
 
 	var _useRouterHistory3 = _interopRequireDefault(_useRouterHistory2);
 
-	var _applyRouterMiddleware2 = __webpack_require__(518);
+	var _applyRouterMiddleware2 = __webpack_require__(522);
 
 	var _applyRouterMiddleware3 = _interopRequireDefault(_applyRouterMiddleware2);
 
-	var _browserHistory2 = __webpack_require__(519);
+	var _browserHistory2 = __webpack_require__(523);
 
 	var _browserHistory3 = _interopRequireDefault(_browserHistory2);
 
-	var _hashHistory2 = __webpack_require__(527);
+	var _hashHistory2 = __webpack_require__(531);
 
 	var _hashHistory3 = _interopRequireDefault(_hashHistory2);
 
-	var _createMemoryHistory2 = __webpack_require__(506);
+	var _createMemoryHistory2 = __webpack_require__(510);
 
 	var _createMemoryHistory3 = _interopRequireDefault(_createMemoryHistory2);
 
@@ -29611,7 +30584,7 @@
 	exports.createMemoryHistory = _createMemoryHistory3.default;
 
 /***/ },
-/* 476 */
+/* 480 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -29709,7 +30682,7 @@
 	}
 
 /***/ },
-/* 477 */
+/* 481 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -29742,7 +30715,7 @@
 	});
 
 /***/ },
-/* 478 */
+/* 482 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -29754,7 +30727,7 @@
 	exports.getParams = getParams;
 	exports.formatPattern = formatPattern;
 
-	var _invariant = __webpack_require__(479);
+	var _invariant = __webpack_require__(483);
 
 	var _invariant2 = _interopRequireDefault(_invariant);
 
@@ -29992,7 +30965,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 479 */
+/* 483 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -30050,7 +31023,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 480 */
+/* 484 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -30059,7 +31032,7 @@
 
 	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-	var _invariant = __webpack_require__(479);
+	var _invariant = __webpack_require__(483);
 
 	var _invariant2 = _interopRequireDefault(_invariant);
 
@@ -30067,21 +31040,21 @@
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _createTransitionManager2 = __webpack_require__(481);
+	var _createTransitionManager2 = __webpack_require__(485);
 
 	var _createTransitionManager3 = _interopRequireDefault(_createTransitionManager2);
 
-	var _InternalPropTypes = __webpack_require__(491);
+	var _InternalPropTypes = __webpack_require__(495);
 
-	var _RouterContext = __webpack_require__(492);
+	var _RouterContext = __webpack_require__(496);
 
 	var _RouterContext2 = _interopRequireDefault(_RouterContext);
 
-	var _RouteUtils = __webpack_require__(476);
+	var _RouteUtils = __webpack_require__(480);
 
-	var _RouterUtils = __webpack_require__(495);
+	var _RouterUtils = __webpack_require__(499);
 
-	var _routerWarning = __webpack_require__(482);
+	var _routerWarning = __webpack_require__(486);
 
 	var _routerWarning2 = _interopRequireDefault(_routerWarning);
 
@@ -30231,7 +31204,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 481 */
+/* 485 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -30242,25 +31215,25 @@
 
 	exports.default = createTransitionManager;
 
-	var _routerWarning = __webpack_require__(482);
+	var _routerWarning = __webpack_require__(486);
 
 	var _routerWarning2 = _interopRequireDefault(_routerWarning);
 
-	var _computeChangedRoutes2 = __webpack_require__(484);
+	var _computeChangedRoutes2 = __webpack_require__(488);
 
 	var _computeChangedRoutes3 = _interopRequireDefault(_computeChangedRoutes2);
 
-	var _TransitionUtils = __webpack_require__(485);
+	var _TransitionUtils = __webpack_require__(489);
 
-	var _isActive2 = __webpack_require__(487);
+	var _isActive2 = __webpack_require__(491);
 
 	var _isActive3 = _interopRequireDefault(_isActive2);
 
-	var _getComponents = __webpack_require__(488);
+	var _getComponents = __webpack_require__(492);
 
 	var _getComponents2 = _interopRequireDefault(_getComponents);
 
-	var _matchRoutes = __webpack_require__(490);
+	var _matchRoutes = __webpack_require__(494);
 
 	var _matchRoutes2 = _interopRequireDefault(_matchRoutes);
 
@@ -30512,7 +31485,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 482 */
+/* 486 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -30521,7 +31494,7 @@
 	exports.default = routerWarning;
 	exports._resetWarned = _resetWarned;
 
-	var _warning = __webpack_require__(483);
+	var _warning = __webpack_require__(487);
 
 	var _warning2 = _interopRequireDefault(_warning);
 
@@ -30553,7 +31526,7 @@
 	}
 
 /***/ },
-/* 483 */
+/* 487 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -30620,14 +31593,14 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 484 */
+/* 488 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _PatternUtils = __webpack_require__(478);
+	var _PatternUtils = __webpack_require__(482);
 
 	function routeParamsChanged(route, prevState, nextState) {
 	  if (!route.path) return false;
@@ -30702,7 +31675,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 485 */
+/* 489 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -30712,7 +31685,7 @@
 	exports.runChangeHooks = runChangeHooks;
 	exports.runLeaveHooks = runLeaveHooks;
 
-	var _AsyncUtils = __webpack_require__(486);
+	var _AsyncUtils = __webpack_require__(490);
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -30862,7 +31835,7 @@
 	}
 
 /***/ },
-/* 486 */
+/* 490 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -30955,7 +31928,7 @@
 	}
 
 /***/ },
-/* 487 */
+/* 491 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -30966,7 +31939,7 @@
 
 	exports.default = isActive;
 
-	var _PatternUtils = __webpack_require__(478);
+	var _PatternUtils = __webpack_require__(482);
 
 	function deepEqual(a, b) {
 	  if (a == b) return true;
@@ -31112,16 +32085,16 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 488 */
+/* 492 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _AsyncUtils = __webpack_require__(486);
+	var _AsyncUtils = __webpack_require__(490);
 
-	var _PromiseUtils = __webpack_require__(489);
+	var _PromiseUtils = __webpack_require__(493);
 
 	function getComponentsForRoute(nextState, route, callback) {
 	  if (route.component || route.components) {
@@ -31157,7 +32130,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 489 */
+/* 493 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -31169,7 +32142,7 @@
 	}
 
 /***/ },
-/* 490 */
+/* 494 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -31182,17 +32155,17 @@
 
 	exports.default = matchRoutes;
 
-	var _AsyncUtils = __webpack_require__(486);
+	var _AsyncUtils = __webpack_require__(490);
 
-	var _PromiseUtils = __webpack_require__(489);
+	var _PromiseUtils = __webpack_require__(493);
 
-	var _PatternUtils = __webpack_require__(478);
+	var _PatternUtils = __webpack_require__(482);
 
-	var _routerWarning = __webpack_require__(482);
+	var _routerWarning = __webpack_require__(486);
 
 	var _routerWarning2 = _interopRequireDefault(_routerWarning);
 
-	var _RouteUtils = __webpack_require__(476);
+	var _RouteUtils = __webpack_require__(480);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -31438,7 +32411,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 491 */
+/* 495 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -31475,7 +32448,7 @@
 	var routes = exports.routes = oneOfType([route, arrayOf(route)]);
 
 /***/ },
-/* 492 */
+/* 496 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -31486,7 +32459,7 @@
 
 	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-	var _invariant = __webpack_require__(479);
+	var _invariant = __webpack_require__(483);
 
 	var _invariant2 = _interopRequireDefault(_invariant);
 
@@ -31494,13 +32467,13 @@
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _getRouteParams = __webpack_require__(493);
+	var _getRouteParams = __webpack_require__(497);
 
 	var _getRouteParams2 = _interopRequireDefault(_getRouteParams);
 
-	var _ContextUtils = __webpack_require__(494);
+	var _ContextUtils = __webpack_require__(498);
 
-	var _RouteUtils = __webpack_require__(476);
+	var _RouteUtils = __webpack_require__(480);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -31614,14 +32587,14 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 493 */
+/* 497 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _PatternUtils = __webpack_require__(478);
+	var _PatternUtils = __webpack_require__(482);
 
 	/**
 	 * Extracts an object of params the given route cares about from
@@ -31645,7 +32618,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 494 */
+/* 498 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -31771,7 +32744,7 @@
 	}
 
 /***/ },
-/* 495 */
+/* 499 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -31804,7 +32777,7 @@
 	}
 
 /***/ },
-/* 496 */
+/* 500 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -31817,13 +32790,13 @@
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _invariant = __webpack_require__(479);
+	var _invariant = __webpack_require__(483);
 
 	var _invariant2 = _interopRequireDefault(_invariant);
 
-	var _PropTypes = __webpack_require__(477);
+	var _PropTypes = __webpack_require__(481);
 
-	var _ContextUtils = __webpack_require__(494);
+	var _ContextUtils = __webpack_require__(498);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -31968,7 +32941,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 497 */
+/* 501 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -31981,7 +32954,7 @@
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _Link = __webpack_require__(496);
+	var _Link = __webpack_require__(500);
 
 	var _Link2 = _interopRequireDefault(_Link);
 
@@ -32001,7 +32974,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 498 */
+/* 502 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -32012,7 +32985,7 @@
 
 	exports.default = withRouter;
 
-	var _invariant = __webpack_require__(479);
+	var _invariant = __webpack_require__(483);
 
 	var _invariant2 = _interopRequireDefault(_invariant);
 
@@ -32020,13 +32993,13 @@
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _hoistNonReactStatics = __webpack_require__(499);
+	var _hoistNonReactStatics = __webpack_require__(503);
 
 	var _hoistNonReactStatics2 = _interopRequireDefault(_hoistNonReactStatics);
 
-	var _ContextUtils = __webpack_require__(494);
+	var _ContextUtils = __webpack_require__(498);
 
-	var _PropTypes = __webpack_require__(477);
+	var _PropTypes = __webpack_require__(481);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -32083,7 +33056,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 499 */
+/* 503 */
 /***/ function(module, exports) {
 
 	/**
@@ -32139,7 +33112,7 @@
 
 
 /***/ },
-/* 500 */
+/* 504 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -32150,19 +33123,19 @@
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _routerWarning = __webpack_require__(482);
+	var _routerWarning = __webpack_require__(486);
 
 	var _routerWarning2 = _interopRequireDefault(_routerWarning);
 
-	var _invariant = __webpack_require__(479);
+	var _invariant = __webpack_require__(483);
 
 	var _invariant2 = _interopRequireDefault(_invariant);
 
-	var _Redirect = __webpack_require__(501);
+	var _Redirect = __webpack_require__(505);
 
 	var _Redirect2 = _interopRequireDefault(_Redirect);
 
-	var _InternalPropTypes = __webpack_require__(491);
+	var _InternalPropTypes = __webpack_require__(495);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -32209,7 +33182,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 501 */
+/* 505 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -32220,15 +33193,15 @@
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _invariant = __webpack_require__(479);
+	var _invariant = __webpack_require__(483);
 
 	var _invariant2 = _interopRequireDefault(_invariant);
 
-	var _RouteUtils = __webpack_require__(476);
+	var _RouteUtils = __webpack_require__(480);
 
-	var _PatternUtils = __webpack_require__(478);
+	var _PatternUtils = __webpack_require__(482);
 
-	var _InternalPropTypes = __webpack_require__(491);
+	var _InternalPropTypes = __webpack_require__(495);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -32318,7 +33291,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 502 */
+/* 506 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -32329,17 +33302,17 @@
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _routerWarning = __webpack_require__(482);
+	var _routerWarning = __webpack_require__(486);
 
 	var _routerWarning2 = _interopRequireDefault(_routerWarning);
 
-	var _invariant = __webpack_require__(479);
+	var _invariant = __webpack_require__(483);
 
 	var _invariant2 = _interopRequireDefault(_invariant);
 
-	var _RouteUtils = __webpack_require__(476);
+	var _RouteUtils = __webpack_require__(480);
 
-	var _InternalPropTypes = __webpack_require__(491);
+	var _InternalPropTypes = __webpack_require__(495);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -32385,7 +33358,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 503 */
+/* 507 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -32396,13 +33369,13 @@
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _invariant = __webpack_require__(479);
+	var _invariant = __webpack_require__(483);
 
 	var _invariant2 = _interopRequireDefault(_invariant);
 
-	var _RouteUtils = __webpack_require__(476);
+	var _RouteUtils = __webpack_require__(480);
 
-	var _InternalPropTypes = __webpack_require__(491);
+	var _InternalPropTypes = __webpack_require__(495);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -32449,7 +33422,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 504 */
+/* 508 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -32458,23 +33431,23 @@
 
 	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-	var _Actions = __webpack_require__(505);
+	var _Actions = __webpack_require__(509);
 
-	var _invariant = __webpack_require__(479);
+	var _invariant = __webpack_require__(483);
 
 	var _invariant2 = _interopRequireDefault(_invariant);
 
-	var _createMemoryHistory = __webpack_require__(506);
+	var _createMemoryHistory = __webpack_require__(510);
 
 	var _createMemoryHistory2 = _interopRequireDefault(_createMemoryHistory);
 
-	var _createTransitionManager = __webpack_require__(481);
+	var _createTransitionManager = __webpack_require__(485);
 
 	var _createTransitionManager2 = _interopRequireDefault(_createTransitionManager);
 
-	var _RouteUtils = __webpack_require__(476);
+	var _RouteUtils = __webpack_require__(480);
 
-	var _RouterUtils = __webpack_require__(495);
+	var _RouterUtils = __webpack_require__(499);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -32527,7 +33500,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 505 */
+/* 509 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -32554,7 +33527,7 @@
 	var POP = exports.POP = 'POP';
 
 /***/ },
-/* 506 */
+/* 510 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -32562,15 +33535,15 @@
 	exports.__esModule = true;
 	exports.default = createMemoryHistory;
 
-	var _useQueries = __webpack_require__(507);
+	var _useQueries = __webpack_require__(511);
 
 	var _useQueries2 = _interopRequireDefault(_useQueries);
 
-	var _useBasename = __webpack_require__(513);
+	var _useBasename = __webpack_require__(517);
 
 	var _useBasename2 = _interopRequireDefault(_useBasename);
 
-	var _createMemoryHistory = __webpack_require__(514);
+	var _createMemoryHistory = __webpack_require__(518);
 
 	var _createMemoryHistory2 = _interopRequireDefault(_createMemoryHistory);
 
@@ -32590,7 +33563,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 507 */
+/* 511 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -32599,15 +33572,15 @@
 
 	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-	var _queryString = __webpack_require__(508);
+	var _queryString = __webpack_require__(512);
 
-	var _runTransitionHook = __webpack_require__(510);
+	var _runTransitionHook = __webpack_require__(514);
 
 	var _runTransitionHook2 = _interopRequireDefault(_runTransitionHook);
 
-	var _LocationUtils = __webpack_require__(511);
+	var _LocationUtils = __webpack_require__(515);
 
-	var _PathUtils = __webpack_require__(512);
+	var _PathUtils = __webpack_require__(516);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -32716,11 +33689,11 @@
 	exports.default = useQueries;
 
 /***/ },
-/* 508 */
+/* 512 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
-	var strictUriEncode = __webpack_require__(509);
+	var strictUriEncode = __webpack_require__(513);
 	var objectAssign = __webpack_require__(301);
 
 	function encoderForArrayFormat(opts) {
@@ -32925,7 +33898,7 @@
 
 
 /***/ },
-/* 509 */
+/* 513 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -32937,14 +33910,14 @@
 
 
 /***/ },
-/* 510 */
+/* 514 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
 
 	exports.__esModule = true;
 
-	var _warning = __webpack_require__(483);
+	var _warning = __webpack_require__(487);
 
 	var _warning2 = _interopRequireDefault(_warning);
 
@@ -32966,7 +33939,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 511 */
+/* 515 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -32978,17 +33951,17 @@
 
 	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-	var _invariant = __webpack_require__(479);
+	var _invariant = __webpack_require__(483);
 
 	var _invariant2 = _interopRequireDefault(_invariant);
 
-	var _warning = __webpack_require__(483);
+	var _warning = __webpack_require__(487);
 
 	var _warning2 = _interopRequireDefault(_warning);
 
-	var _PathUtils = __webpack_require__(512);
+	var _PathUtils = __webpack_require__(516);
 
-	var _Actions = __webpack_require__(505);
+	var _Actions = __webpack_require__(509);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -33064,7 +34037,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 512 */
+/* 516 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -33072,7 +34045,7 @@
 	exports.__esModule = true;
 	exports.createPath = exports.parsePath = exports.getQueryStringValueFromPath = exports.stripQueryStringValueFromPath = exports.addQueryStringValueToPath = undefined;
 
-	var _warning = __webpack_require__(483);
+	var _warning = __webpack_require__(487);
 
 	var _warning2 = _interopRequireDefault(_warning);
 
@@ -33171,7 +34144,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 513 */
+/* 517 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -33180,11 +34153,11 @@
 
 	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-	var _runTransitionHook = __webpack_require__(510);
+	var _runTransitionHook = __webpack_require__(514);
 
 	var _runTransitionHook2 = _interopRequireDefault(_runTransitionHook);
 
-	var _PathUtils = __webpack_require__(512);
+	var _PathUtils = __webpack_require__(516);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -33285,7 +34258,7 @@
 	exports.default = useBasename;
 
 /***/ },
-/* 514 */
+/* 518 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -33294,23 +34267,23 @@
 
 	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-	var _warning = __webpack_require__(483);
+	var _warning = __webpack_require__(487);
 
 	var _warning2 = _interopRequireDefault(_warning);
 
-	var _invariant = __webpack_require__(479);
+	var _invariant = __webpack_require__(483);
 
 	var _invariant2 = _interopRequireDefault(_invariant);
 
-	var _LocationUtils = __webpack_require__(511);
+	var _LocationUtils = __webpack_require__(515);
 
-	var _PathUtils = __webpack_require__(512);
+	var _PathUtils = __webpack_require__(516);
 
-	var _createHistory = __webpack_require__(515);
+	var _createHistory = __webpack_require__(519);
 
 	var _createHistory2 = _interopRequireDefault(_createHistory);
 
-	var _Actions = __webpack_require__(505);
+	var _Actions = __webpack_require__(509);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -33431,24 +34404,24 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 515 */
+/* 519 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _AsyncUtils = __webpack_require__(516);
+	var _AsyncUtils = __webpack_require__(520);
 
-	var _PathUtils = __webpack_require__(512);
+	var _PathUtils = __webpack_require__(516);
 
-	var _runTransitionHook = __webpack_require__(510);
+	var _runTransitionHook = __webpack_require__(514);
 
 	var _runTransitionHook2 = _interopRequireDefault(_runTransitionHook);
 
-	var _Actions = __webpack_require__(505);
+	var _Actions = __webpack_require__(509);
 
-	var _LocationUtils = __webpack_require__(511);
+	var _LocationUtils = __webpack_require__(515);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -33612,7 +34585,7 @@
 	exports.default = createHistory;
 
 /***/ },
-/* 516 */
+/* 520 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -33673,7 +34646,7 @@
 	};
 
 /***/ },
-/* 517 */
+/* 521 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -33681,11 +34654,11 @@
 	exports.__esModule = true;
 	exports.default = useRouterHistory;
 
-	var _useQueries = __webpack_require__(507);
+	var _useQueries = __webpack_require__(511);
 
 	var _useQueries2 = _interopRequireDefault(_useQueries);
 
-	var _useBasename = __webpack_require__(513);
+	var _useBasename = __webpack_require__(517);
 
 	var _useBasename2 = _interopRequireDefault(_useBasename);
 
@@ -33700,7 +34673,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 518 */
+/* 522 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -33713,11 +34686,11 @@
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _RouterContext = __webpack_require__(492);
+	var _RouterContext = __webpack_require__(496);
 
 	var _RouterContext2 = _interopRequireDefault(_RouterContext);
 
-	var _routerWarning = __webpack_require__(482);
+	var _routerWarning = __webpack_require__(486);
 
 	var _routerWarning2 = _interopRequireDefault(_routerWarning);
 
@@ -33763,18 +34736,18 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 519 */
+/* 523 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _createBrowserHistory = __webpack_require__(520);
+	var _createBrowserHistory = __webpack_require__(524);
 
 	var _createBrowserHistory2 = _interopRequireDefault(_createBrowserHistory);
 
-	var _createRouterHistory = __webpack_require__(526);
+	var _createRouterHistory = __webpack_require__(530);
 
 	var _createRouterHistory2 = _interopRequireDefault(_createRouterHistory);
 
@@ -33784,7 +34757,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 520 */
+/* 524 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -33793,23 +34766,23 @@
 
 	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-	var _invariant = __webpack_require__(479);
+	var _invariant = __webpack_require__(483);
 
 	var _invariant2 = _interopRequireDefault(_invariant);
 
-	var _ExecutionEnvironment = __webpack_require__(521);
+	var _ExecutionEnvironment = __webpack_require__(525);
 
-	var _BrowserProtocol = __webpack_require__(522);
+	var _BrowserProtocol = __webpack_require__(526);
 
 	var BrowserProtocol = _interopRequireWildcard(_BrowserProtocol);
 
-	var _RefreshProtocol = __webpack_require__(525);
+	var _RefreshProtocol = __webpack_require__(529);
 
 	var RefreshProtocol = _interopRequireWildcard(_RefreshProtocol);
 
-	var _DOMUtils = __webpack_require__(523);
+	var _DOMUtils = __webpack_require__(527);
 
-	var _createHistory = __webpack_require__(515);
+	var _createHistory = __webpack_require__(519);
 
 	var _createHistory2 = _interopRequireDefault(_createHistory);
 
@@ -33883,7 +34856,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 521 */
+/* 525 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -33892,7 +34865,7 @@
 	var canUseDOM = exports.canUseDOM = !!(typeof window !== 'undefined' && window.document && window.document.createElement);
 
 /***/ },
-/* 522 */
+/* 526 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -33900,15 +34873,15 @@
 	exports.__esModule = true;
 	exports.go = exports.replaceLocation = exports.pushLocation = exports.startListener = exports.getUserConfirmation = exports.getCurrentLocation = undefined;
 
-	var _LocationUtils = __webpack_require__(511);
+	var _LocationUtils = __webpack_require__(515);
 
-	var _DOMUtils = __webpack_require__(523);
+	var _DOMUtils = __webpack_require__(527);
 
-	var _DOMStateStorage = __webpack_require__(524);
+	var _DOMStateStorage = __webpack_require__(528);
 
-	var _PathUtils = __webpack_require__(512);
+	var _PathUtils = __webpack_require__(516);
 
-	var _ExecutionEnvironment = __webpack_require__(521);
+	var _ExecutionEnvironment = __webpack_require__(525);
 
 	var PopStateEvent = 'popstate';
 	var HashChangeEvent = 'hashchange';
@@ -33995,7 +34968,7 @@
 	};
 
 /***/ },
-/* 523 */
+/* 527 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -34040,7 +35013,7 @@
 	};
 
 /***/ },
-/* 524 */
+/* 528 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -34048,7 +35021,7 @@
 	exports.__esModule = true;
 	exports.readState = exports.saveState = undefined;
 
-	var _warning = __webpack_require__(483);
+	var _warning = __webpack_require__(487);
 
 	var _warning2 = _interopRequireDefault(_warning);
 
@@ -34131,7 +35104,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 525 */
+/* 529 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -34139,7 +35112,7 @@
 	exports.__esModule = true;
 	exports.replaceLocation = exports.pushLocation = exports.getCurrentLocation = exports.go = exports.getUserConfirmation = undefined;
 
-	var _BrowserProtocol = __webpack_require__(522);
+	var _BrowserProtocol = __webpack_require__(526);
 
 	Object.defineProperty(exports, 'getUserConfirmation', {
 	  enumerable: true,
@@ -34154,9 +35127,9 @@
 	  }
 	});
 
-	var _LocationUtils = __webpack_require__(511);
+	var _LocationUtils = __webpack_require__(515);
 
-	var _PathUtils = __webpack_require__(512);
+	var _PathUtils = __webpack_require__(516);
 
 	var getCurrentLocation = exports.getCurrentLocation = function getCurrentLocation() {
 	  return (0, _LocationUtils.createLocation)(window.location);
@@ -34173,7 +35146,7 @@
 	};
 
 /***/ },
-/* 526 */
+/* 530 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -34186,7 +35159,7 @@
 	  return history;
 	};
 
-	var _useRouterHistory = __webpack_require__(517);
+	var _useRouterHistory = __webpack_require__(521);
 
 	var _useRouterHistory2 = _interopRequireDefault(_useRouterHistory);
 
@@ -34197,18 +35170,18 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 527 */
+/* 531 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	exports.__esModule = true;
 
-	var _createHashHistory = __webpack_require__(528);
+	var _createHashHistory = __webpack_require__(532);
 
 	var _createHashHistory2 = _interopRequireDefault(_createHashHistory);
 
-	var _createRouterHistory = __webpack_require__(526);
+	var _createRouterHistory = __webpack_require__(530);
 
 	var _createRouterHistory2 = _interopRequireDefault(_createRouterHistory);
 
@@ -34218,7 +35191,7 @@
 	module.exports = exports['default'];
 
 /***/ },
-/* 528 */
+/* 532 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -34227,23 +35200,23 @@
 
 	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-	var _warning = __webpack_require__(483);
+	var _warning = __webpack_require__(487);
 
 	var _warning2 = _interopRequireDefault(_warning);
 
-	var _invariant = __webpack_require__(479);
+	var _invariant = __webpack_require__(483);
 
 	var _invariant2 = _interopRequireDefault(_invariant);
 
-	var _ExecutionEnvironment = __webpack_require__(521);
+	var _ExecutionEnvironment = __webpack_require__(525);
 
-	var _DOMUtils = __webpack_require__(523);
+	var _DOMUtils = __webpack_require__(527);
 
-	var _HashProtocol = __webpack_require__(529);
+	var _HashProtocol = __webpack_require__(533);
 
 	var HashProtocol = _interopRequireWildcard(_HashProtocol);
 
-	var _createHistory = __webpack_require__(515);
+	var _createHistory = __webpack_require__(519);
 
 	var _createHistory2 = _interopRequireDefault(_createHistory);
 
@@ -34371,7 +35344,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 529 */
+/* 533 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -34379,7 +35352,7 @@
 	exports.__esModule = true;
 	exports.replaceLocation = exports.pushLocation = exports.startListener = exports.getCurrentLocation = exports.go = exports.getUserConfirmation = undefined;
 
-	var _BrowserProtocol = __webpack_require__(522);
+	var _BrowserProtocol = __webpack_require__(526);
 
 	Object.defineProperty(exports, 'getUserConfirmation', {
 	  enumerable: true,
@@ -34394,17 +35367,17 @@
 	  }
 	});
 
-	var _warning = __webpack_require__(483);
+	var _warning = __webpack_require__(487);
 
 	var _warning2 = _interopRequireDefault(_warning);
 
-	var _LocationUtils = __webpack_require__(511);
+	var _LocationUtils = __webpack_require__(515);
 
-	var _DOMUtils = __webpack_require__(523);
+	var _DOMUtils = __webpack_require__(527);
 
-	var _DOMStateStorage = __webpack_require__(524);
+	var _DOMStateStorage = __webpack_require__(528);
 
-	var _PathUtils = __webpack_require__(512);
+	var _PathUtils = __webpack_require__(516);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -34513,7 +35486,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 530 */
+/* 534 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -34523,15 +35496,15 @@
 	});
 	exports.Home = exports.Header = exports.App = undefined;
 
-	var _App = __webpack_require__(531);
+	var _App = __webpack_require__(535);
 
 	var _App2 = _interopRequireDefault(_App);
 
-	var _Header = __webpack_require__(570);
+	var _Header = __webpack_require__(574);
 
 	var _Header2 = _interopRequireDefault(_Header);
 
-	var _Home = __webpack_require__(579);
+	var _Home = __webpack_require__(582);
 
 	var _Home2 = _interopRequireDefault(_Home);
 
@@ -34542,7 +35515,7 @@
 	exports.Home = _Home2.default;
 
 /***/ },
-/* 531 */
+/* 535 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -34557,11 +35530,11 @@
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _ = __webpack_require__(530);
+	var _ = __webpack_require__(534);
 
-	var _account = __webpack_require__(532);
+	var _account = __webpack_require__(536);
 
-	var _reactRedux = __webpack_require__(534);
+	var _reactRedux = __webpack_require__(538);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -34583,8 +35556,7 @@
 	    _createClass(App, [{
 	        key: 'componentWillMount',
 	        value: function componentWillMount() {
-	            //this.props.sessionRequest();
-
+	            this.props.sessionRequest();
 	        }
 	    }, {
 	        key: 'render',
@@ -34612,7 +35584,7 @@
 	exports.default = (0, _reactRedux.connect)(null, mapDispatchToProps)(App);
 
 /***/ },
-/* 532 */
+/* 536 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -34620,10 +35592,6 @@
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-	exports.loginRequest = loginRequest;
-	exports.login = login;
-	exports.loginSuccess = loginSuccess;
-	exports.loginFailure = loginFailure;
 	exports.signupRequest = signupRequest;
 	exports.signup = signup;
 	exports.signupSuccess = signupSuccess;
@@ -34632,21 +35600,9 @@
 	exports.session = session;
 	exports.sessionSuccess = sessionSuccess;
 	exports.sessionFailure = sessionFailure;
-	exports.logoutRequest = logoutRequest;
-	exports.logout = logout;
-	exports.logoutSuccess = logoutSuccess;
-	exports.logoutFailure = logoutFailure;
-	exports.removeRequest = removeRequest;
-	exports.remove = remove;
-	exports.removeSuccess = removeSuccess;
-	exports.removeFailure = removeFailure;
 
-	var _actions = __webpack_require__(533);
+	var _actions = __webpack_require__(537);
 
-	function loginRequest() {}
-	function login() {}
-	function loginSuccess() {}
-	function loginFailure() {}
 	function signupRequest() {}
 	function signup() {}
 	function signupSuccess() {}
@@ -34655,87 +35611,6 @@
 	function session() {}
 	function sessionSuccess() {}
 	function sessionFailure() {}
-	function logoutRequest() {}
-	function logout() {}
-	function logoutSuccess() {}
-	function logoutFailure() {}
-	function removeRequest() {}
-	function remove() {}
-	function removeSuccess() {}
-	function removeFailure() {}
-
-	/*
-	loginRequest = (username, password) => {
-	 return (dispatch) => {
-	 dispatch(login());
-
-	 let username_and_password = {
-	 username,
-	 password
-	 };
-	 return fetch('/api/account/login', {
-	 method : 'POST',
-	 headers : {'Content-Type' : 'application/json'},
-	 credentials: 'include',
-	 body : JSON.stringify(username_and_password)
-	 })
-	 .then(res => res.json())
-	 .then(res => {
-	 if(res.success)
-	 dispatch(loginSuccess(username));
-	 else
-	 dispatch(loginFailure());
-	 }).catch((error) => {
-	 dispatch(loginFailure());
-	 });
-	 }
-	 };
-	 login = () => {
-	 return {
-	 type : ACCOUNT_LOGIN
-	 }
-	 };
-	 loginSuccess = (username) => {
-	 return {
-	 type : ACCOUNT_LOGIN_SUCCESS,
-	 username
-	 }
-	 };
-	 loginFailure = () => {
-	 return {
-	 type : ACCOUNT_LOGIN_FAILURE
-	 }
-	 };
-	*/
-	exports.loginRequest = loginRequest = function loginRequest(returnURI) {
-	    return function (dispatch) {
-	        dispatch(login());
-
-	        return fetch('/auth/login' + '?return=' + returnURI, { method: 'GET' }).then(function (res) {
-	            return res.json();
-	        }).then(function (res) {
-	            if (res.success) dispatch(loginSuccess(res.profile));else dispatch(loginFailure());
-	        }).catch(function (error) {
-	            dispatch(loginFailure());
-	        });
-	    };
-	};
-	exports.login = login = function login() {
-	    return {
-	        type: _actions.ACCOUNT_LOGIN
-	    };
-	};
-	exports.loginSuccess = loginSuccess = function loginSuccess(profile) {
-	    return {
-	        type: _actions.ACCOUNT_LOGIN_SUCCESS,
-	        profile: profile
-	    };
-	};
-	exports.loginFailure = loginFailure = function loginFailure() {
-	    return {
-	        type: _actions.ACCOUNT_LOGIN_FAILURE
-	    };
-	};
 
 	exports.signupRequest = signupRequest = function signupRequest(username, password) {
 	    return function (dispatch) {
@@ -34771,56 +35646,21 @@
 	    };
 	};
 
-	/*
-	sessionRequest = () => {
-	    return (dispatch) => {
-	        dispatch(session());
-
-	        return fetch('/api/account/auth', {
-	            method: 'GET',
-	            credentials: 'include'
-	        })
-	            .then(res => res.json())
-	            .then(res => {
-	                if (res.username)
-	                    dispatch(sessionSuccess(res.username));
-	                else
-	                    dispatch(sessionFailure());
-	            }).catch((error) => {
-	                dispatch(sessionFailure());
-	            });
-	    }
-	};
-	session = () => {
-	    return {
-	        type : ACCOUNT_SESSION
-	    }
-	};
-	sessionSuccess = (username) => {
-	    return {
-	        type : ACCOUNT_SESSION_SUCCESS,
-	        username
-	    }
-	};
-	sessionFailure = () => {
-	    return {
-	        type : ACCOUNT_SESSION_FAILURE
-	    }
-	};
-	*/
 	exports.sessionRequest = sessionRequest = function sessionRequest() {
 	    return function (dispatch) {
 	        dispatch(session());
 
 	        return fetch('/auth', {
 	            method: 'GET',
-	            credentials: 'include'
+	            credentials: 'include',
+	            headers: {
+	                'pragma': 'no-cache',
+	                'cache-control': 'no-cache'
+	            }
 	        }).then(function (res) {
 	            return res.json();
 	        }).then(function (res) {
-	            if (res.profile) {
-	                dispatch(sessionSuccess(res.profile));
-	            } else dispatch(sessionFailure());
+	            res.profile ? dispatch(sessionSuccess(res.profile)) : dispatch(sessionSuccess(null));
 	        }).catch(function (error) {
 	            dispatch(sessionFailure());
 	        });
@@ -34843,81 +35683,8 @@
 	    };
 	};
 
-	exports.logoutRequest = logoutRequest = function logoutRequest() {
-	    return function (dispatch) {
-	        dispatch(logout());
-
-	        return fetch('/api/account/logout', {
-	            method: 'GET',
-	            credentials: 'include'
-	        }).then(function (res) {
-	            return res.json();
-	        }).then(function (res) {
-	            if (res.success) {
-	                dispatch(logoutSuccess());
-	            } else {
-	                console.log(res.error);
-	                dispatch(logoutFailure());
-	            }
-	        }).catch(function (error) {
-	            console.log(error);
-	            dispatch(logoutFailure());
-	        });
-	    };
-	};
-	exports.logout = logout = function logout() {
-	    return {
-	        type: _actions.ACCOUNT_LOGOUT
-	    };
-	};
-	exports.logoutSuccess = logoutSuccess = function logoutSuccess() {
-	    return {
-	        type: _actions.ACCOUNT_LOGOUT_SUCCESS
-	    };
-	};
-	exports.logoutFailure = logoutFailure = function logoutFailure() {
-	    return {
-	        type: _actions.ACCOUNT_LOGOUT_FAILURE
-	    };
-	};
-
-	exports.removeRequest = removeRequest = function removeRequest(username) {
-	    return function (dispatch) {
-	        dispatch(remove());
-
-	        return fetch('/api/account/remove', {
-	            method: 'DELETE',
-	            headers: { 'Content-Type': 'application/json' },
-	            credentials: 'include',
-	            body: JSON.stringify({ username: username })
-	        }).then(function (res) {
-	            return res.json();
-	        }).then(function (res) {
-	            if (res.success) dispatch(removeSuccess());else dispatch(removeFailure());
-	        }).catch(function (error) {
-	            console.log(error);
-	            dispatch(removeFailure());
-	        });
-	    };
-	};
-	exports.remove = remove = function remove() {
-	    return {
-	        type: _actions.ACCOUNT_REMOVE
-	    };
-	};
-	exports.removeSuccess = removeSuccess = function removeSuccess() {
-	    return {
-	        type: _actions.ACCOUNT_REMOVE_SUCCESS
-	    };
-	};
-	exports.removeFailure = removeFailure = function removeFailure() {
-	    return {
-	        type: _actions.ACCOUNT_REMOVE_FAILURE
-	    };
-	};
-
 /***/ },
-/* 533 */
+/* 537 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -34925,21 +35692,12 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	var ACCOUNT_LOGIN = exports.ACCOUNT_LOGIN = 'ACCOUNT_LOGIN';
-	var ACCOUNT_LOGIN_SUCCESS = exports.ACCOUNT_LOGIN_SUCCESS = 'ACCOUNT_LOGIN_SUCCESS';
-	var ACCOUNT_LOGIN_FAILURE = exports.ACCOUNT_LOGIN_FAILURE = 'ACCOUNT_LOGIN_FAILURE';
 	var ACCOUNT_SIGNUP = exports.ACCOUNT_SIGNUP = 'ACCOUNT_SIGNUP';
 	var ACCOUNT_SIGNUP_SUCCESS = exports.ACCOUNT_SIGNUP_SUCCESS = 'ACCOUNT_SIGNUP_SUCCESS';
 	var ACCOUNT_SIGNUP_FAILURE = exports.ACCOUNT_SIGNUP_FAILURE = 'ACCOUNT_SIGNUP_FAILURE';
 	var ACCOUNT_SESSION = exports.ACCOUNT_SESSION = 'ACCOUNT_SESSION';
 	var ACCOUNT_SESSION_SUCCESS = exports.ACCOUNT_SESSION_SUCCESS = 'ACCOUNT_SESSION_SUCCESS';
 	var ACCOUNT_SESSION_FAILURE = exports.ACCOUNT_SESSION_FAILURE = 'ACCOUNT_SESSION_FAILURE';
-	var ACCOUNT_LOGOUT = exports.ACCOUNT_LOGOUT = 'ACCOUNT_LOGOUT';
-	var ACCOUNT_LOGOUT_SUCCESS = exports.ACCOUNT_LOGOUT_SUCCESS = 'ACCOUNT_LOGOUT_SUCCESS';
-	var ACCOUNT_LOGOUT_FAILURE = exports.ACCOUNT_LOGOUT_FAILURE = 'ACCOUNT_LOGOUT_FAILURE';
-	var ACCOUNT_REMOVE = exports.ACCOUNT_REMOVE = 'ACCOUNT_REMOVE';
-	var ACCOUNT_REMOVE_SUCCESS = exports.ACCOUNT_REMOVE_SUCCESS = 'ACCOUNT_REMOVE_SUCCESS';
-	var ACCOUNT_REMOVE_FAILURE = exports.ACCOUNT_REMOVE_FAILURE = 'ACCOUNT_REMOVE_FAILURE';
 
 	var POST_LOADLIST = exports.POST_LOADLIST = 'POST_LOADLIST';
 	var POST_LOADLIST_SUCCESS = exports.POST_LOADLIST_SUCCESS = 'POST_LOADLIST_SUCCESS';
@@ -34958,7 +35716,7 @@
 	var POST_REMOVE_FAILURE = exports.POST_REMOVE_FAILURE = 'POST_REMOVE_FAILURE';
 
 /***/ },
-/* 534 */
+/* 538 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -34966,15 +35724,15 @@
 	exports.__esModule = true;
 	exports.connect = exports.connectAdvanced = exports.Provider = undefined;
 
-	var _Provider = __webpack_require__(535);
+	var _Provider = __webpack_require__(539);
 
 	var _Provider2 = _interopRequireDefault(_Provider);
 
-	var _connectAdvanced = __webpack_require__(539);
+	var _connectAdvanced = __webpack_require__(543);
 
 	var _connectAdvanced2 = _interopRequireDefault(_connectAdvanced);
 
-	var _connect = __webpack_require__(540);
+	var _connect = __webpack_require__(544);
 
 	var _connect2 = _interopRequireDefault(_connect);
 
@@ -34985,7 +35743,7 @@
 	exports.connect = _connect2.default;
 
 /***/ },
-/* 535 */
+/* 539 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -34995,15 +35753,15 @@
 
 	var _react = __webpack_require__(299);
 
-	var _Subscription = __webpack_require__(536);
+	var _Subscription = __webpack_require__(540);
 
 	var _Subscription2 = _interopRequireDefault(_Subscription);
 
-	var _storeShape = __webpack_require__(537);
+	var _storeShape = __webpack_require__(541);
 
 	var _storeShape2 = _interopRequireDefault(_storeShape);
 
-	var _warning = __webpack_require__(538);
+	var _warning = __webpack_require__(542);
 
 	var _warning2 = _interopRequireDefault(_warning);
 
@@ -35075,7 +35833,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 536 */
+/* 540 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -35173,7 +35931,7 @@
 	exports.default = Subscription;
 
 /***/ },
-/* 537 */
+/* 541 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -35189,7 +35947,7 @@
 	});
 
 /***/ },
-/* 538 */
+/* 542 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -35219,7 +35977,7 @@
 	}
 
 /***/ },
-/* 539 */
+/* 543 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -35230,21 +35988,21 @@
 
 	exports.default = connectAdvanced;
 
-	var _hoistNonReactStatics = __webpack_require__(499);
+	var _hoistNonReactStatics = __webpack_require__(503);
 
 	var _hoistNonReactStatics2 = _interopRequireDefault(_hoistNonReactStatics);
 
-	var _invariant = __webpack_require__(479);
+	var _invariant = __webpack_require__(483);
 
 	var _invariant2 = _interopRequireDefault(_invariant);
 
 	var _react = __webpack_require__(299);
 
-	var _Subscription = __webpack_require__(536);
+	var _Subscription = __webpack_require__(540);
 
 	var _Subscription2 = _interopRequireDefault(_Subscription);
 
-	var _storeShape = __webpack_require__(537);
+	var _storeShape = __webpack_require__(541);
 
 	var _storeShape2 = _interopRequireDefault(_storeShape);
 
@@ -35501,7 +36259,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 540 */
+/* 544 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -35512,27 +36270,27 @@
 
 	exports.createConnect = createConnect;
 
-	var _connectAdvanced = __webpack_require__(539);
+	var _connectAdvanced = __webpack_require__(543);
 
 	var _connectAdvanced2 = _interopRequireDefault(_connectAdvanced);
 
-	var _shallowEqual = __webpack_require__(541);
+	var _shallowEqual = __webpack_require__(545);
 
 	var _shallowEqual2 = _interopRequireDefault(_shallowEqual);
 
-	var _mapDispatchToProps = __webpack_require__(542);
+	var _mapDispatchToProps = __webpack_require__(546);
 
 	var _mapDispatchToProps2 = _interopRequireDefault(_mapDispatchToProps);
 
-	var _mapStateToProps = __webpack_require__(566);
+	var _mapStateToProps = __webpack_require__(570);
 
 	var _mapStateToProps2 = _interopRequireDefault(_mapStateToProps);
 
-	var _mergeProps = __webpack_require__(567);
+	var _mergeProps = __webpack_require__(571);
 
 	var _mergeProps2 = _interopRequireDefault(_mergeProps);
 
-	var _selectorFactory = __webpack_require__(568);
+	var _selectorFactory = __webpack_require__(572);
 
 	var _selectorFactory2 = _interopRequireDefault(_selectorFactory);
 
@@ -35634,7 +36392,7 @@
 	exports.default = createConnect();
 
 /***/ },
-/* 541 */
+/* 545 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -35662,7 +36420,7 @@
 	}
 
 /***/ },
-/* 542 */
+/* 546 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -35672,9 +36430,9 @@
 	exports.whenMapDispatchToPropsIsMissing = whenMapDispatchToPropsIsMissing;
 	exports.whenMapDispatchToPropsIsObject = whenMapDispatchToPropsIsObject;
 
-	var _redux = __webpack_require__(543);
+	var _redux = __webpack_require__(547);
 
-	var _wrapMapToProps = __webpack_require__(564);
+	var _wrapMapToProps = __webpack_require__(568);
 
 	function whenMapDispatchToPropsIsFunction(mapDispatchToProps) {
 	  return typeof mapDispatchToProps === 'function' ? (0, _wrapMapToProps.wrapMapToPropsFunc)(mapDispatchToProps, 'mapDispatchToProps') : undefined;
@@ -35695,7 +36453,7 @@
 	exports.default = [whenMapDispatchToPropsIsFunction, whenMapDispatchToPropsIsMissing, whenMapDispatchToPropsIsObject];
 
 /***/ },
-/* 543 */
+/* 547 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -35703,27 +36461,27 @@
 	exports.__esModule = true;
 	exports.compose = exports.applyMiddleware = exports.bindActionCreators = exports.combineReducers = exports.createStore = undefined;
 
-	var _createStore = __webpack_require__(544);
+	var _createStore = __webpack_require__(548);
 
 	var _createStore2 = _interopRequireDefault(_createStore);
 
-	var _combineReducers = __webpack_require__(559);
+	var _combineReducers = __webpack_require__(563);
 
 	var _combineReducers2 = _interopRequireDefault(_combineReducers);
 
-	var _bindActionCreators = __webpack_require__(561);
+	var _bindActionCreators = __webpack_require__(565);
 
 	var _bindActionCreators2 = _interopRequireDefault(_bindActionCreators);
 
-	var _applyMiddleware = __webpack_require__(562);
+	var _applyMiddleware = __webpack_require__(566);
 
 	var _applyMiddleware2 = _interopRequireDefault(_applyMiddleware);
 
-	var _compose = __webpack_require__(563);
+	var _compose = __webpack_require__(567);
 
 	var _compose2 = _interopRequireDefault(_compose);
 
-	var _warning = __webpack_require__(560);
+	var _warning = __webpack_require__(564);
 
 	var _warning2 = _interopRequireDefault(_warning);
 
@@ -35747,7 +36505,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 544 */
+/* 548 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -35756,11 +36514,11 @@
 	exports.ActionTypes = undefined;
 	exports['default'] = createStore;
 
-	var _isPlainObject = __webpack_require__(545);
+	var _isPlainObject = __webpack_require__(549);
 
 	var _isPlainObject2 = _interopRequireDefault(_isPlainObject);
 
-	var _symbolObservable = __webpack_require__(555);
+	var _symbolObservable = __webpack_require__(559);
 
 	var _symbolObservable2 = _interopRequireDefault(_symbolObservable);
 
@@ -36013,12 +36771,12 @@
 	}
 
 /***/ },
-/* 545 */
+/* 549 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var baseGetTag = __webpack_require__(546),
-	    getPrototype = __webpack_require__(552),
-	    isObjectLike = __webpack_require__(554);
+	var baseGetTag = __webpack_require__(550),
+	    getPrototype = __webpack_require__(556),
+	    isObjectLike = __webpack_require__(558);
 
 	/** `Object#toString` result references. */
 	var objectTag = '[object Object]';
@@ -36081,12 +36839,12 @@
 
 
 /***/ },
-/* 546 */
+/* 550 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Symbol = __webpack_require__(547),
-	    getRawTag = __webpack_require__(550),
-	    objectToString = __webpack_require__(551);
+	var Symbol = __webpack_require__(551),
+	    getRawTag = __webpack_require__(554),
+	    objectToString = __webpack_require__(555);
 
 	/** `Object#toString` result references. */
 	var nullTag = '[object Null]',
@@ -36115,10 +36873,10 @@
 
 
 /***/ },
-/* 547 */
+/* 551 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var root = __webpack_require__(548);
+	var root = __webpack_require__(552);
 
 	/** Built-in value references. */
 	var Symbol = root.Symbol;
@@ -36127,10 +36885,10 @@
 
 
 /***/ },
-/* 548 */
+/* 552 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var freeGlobal = __webpack_require__(549);
+	var freeGlobal = __webpack_require__(553);
 
 	/** Detect free variable `self`. */
 	var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
@@ -36142,7 +36900,7 @@
 
 
 /***/ },
-/* 549 */
+/* 553 */
 /***/ function(module, exports) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {/** Detect free variable `global` from Node.js. */
@@ -36153,10 +36911,10 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 550 */
+/* 554 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Symbol = __webpack_require__(547);
+	var Symbol = __webpack_require__(551);
 
 	/** Used for built-in method references. */
 	var objectProto = Object.prototype;
@@ -36205,7 +36963,7 @@
 
 
 /***/ },
-/* 551 */
+/* 555 */
 /***/ function(module, exports) {
 
 	/** Used for built-in method references. */
@@ -36233,10 +36991,10 @@
 
 
 /***/ },
-/* 552 */
+/* 556 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var overArg = __webpack_require__(553);
+	var overArg = __webpack_require__(557);
 
 	/** Built-in value references. */
 	var getPrototype = overArg(Object.getPrototypeOf, Object);
@@ -36245,7 +37003,7 @@
 
 
 /***/ },
-/* 553 */
+/* 557 */
 /***/ function(module, exports) {
 
 	/**
@@ -36266,7 +37024,7 @@
 
 
 /***/ },
-/* 554 */
+/* 558 */
 /***/ function(module, exports) {
 
 	/**
@@ -36301,14 +37059,14 @@
 
 
 /***/ },
-/* 555 */
+/* 559 */
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__(556);
+	module.exports = __webpack_require__(560);
 
 
 /***/ },
-/* 556 */
+/* 560 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global, module) {'use strict';
@@ -36317,7 +37075,7 @@
 	  value: true
 	});
 
-	var _ponyfill = __webpack_require__(558);
+	var _ponyfill = __webpack_require__(562);
 
 	var _ponyfill2 = _interopRequireDefault(_ponyfill);
 
@@ -36340,10 +37098,10 @@
 
 	var result = (0, _ponyfill2['default'])(root);
 	exports['default'] = result;
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(557)(module)))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(561)(module)))
 
 /***/ },
-/* 557 */
+/* 561 */
 /***/ function(module, exports) {
 
 	module.exports = function(module) {
@@ -36359,7 +37117,7 @@
 
 
 /***/ },
-/* 558 */
+/* 562 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -36387,7 +37145,7 @@
 	};
 
 /***/ },
-/* 559 */
+/* 563 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -36395,13 +37153,13 @@
 	exports.__esModule = true;
 	exports['default'] = combineReducers;
 
-	var _createStore = __webpack_require__(544);
+	var _createStore = __webpack_require__(548);
 
-	var _isPlainObject = __webpack_require__(545);
+	var _isPlainObject = __webpack_require__(549);
 
 	var _isPlainObject2 = _interopRequireDefault(_isPlainObject);
 
-	var _warning = __webpack_require__(560);
+	var _warning = __webpack_require__(564);
 
 	var _warning2 = _interopRequireDefault(_warning);
 
@@ -36535,7 +37293,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 560 */
+/* 564 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -36565,7 +37323,7 @@
 	}
 
 /***/ },
-/* 561 */
+/* 565 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -36621,7 +37379,7 @@
 	}
 
 /***/ },
-/* 562 */
+/* 566 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -36632,7 +37390,7 @@
 
 	exports['default'] = applyMiddleware;
 
-	var _compose = __webpack_require__(563);
+	var _compose = __webpack_require__(567);
 
 	var _compose2 = _interopRequireDefault(_compose);
 
@@ -36684,7 +37442,7 @@
 	}
 
 /***/ },
-/* 563 */
+/* 567 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -36727,7 +37485,7 @@
 	}
 
 /***/ },
-/* 564 */
+/* 568 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -36737,7 +37495,7 @@
 	exports.getDependsOnOwnProps = getDependsOnOwnProps;
 	exports.wrapMapToPropsFunc = wrapMapToPropsFunc;
 
-	var _verifyPlainObject = __webpack_require__(565);
+	var _verifyPlainObject = __webpack_require__(569);
 
 	var _verifyPlainObject2 = _interopRequireDefault(_verifyPlainObject);
 
@@ -36809,7 +37567,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 565 */
+/* 569 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -36817,11 +37575,11 @@
 	exports.__esModule = true;
 	exports.default = verifyPlainObject;
 
-	var _isPlainObject = __webpack_require__(545);
+	var _isPlainObject = __webpack_require__(549);
 
 	var _isPlainObject2 = _interopRequireDefault(_isPlainObject);
 
-	var _warning = __webpack_require__(538);
+	var _warning = __webpack_require__(542);
 
 	var _warning2 = _interopRequireDefault(_warning);
 
@@ -36834,7 +37592,7 @@
 	}
 
 /***/ },
-/* 566 */
+/* 570 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -36843,7 +37601,7 @@
 	exports.whenMapStateToPropsIsFunction = whenMapStateToPropsIsFunction;
 	exports.whenMapStateToPropsIsMissing = whenMapStateToPropsIsMissing;
 
-	var _wrapMapToProps = __webpack_require__(564);
+	var _wrapMapToProps = __webpack_require__(568);
 
 	function whenMapStateToPropsIsFunction(mapStateToProps) {
 	  return typeof mapStateToProps === 'function' ? (0, _wrapMapToProps.wrapMapToPropsFunc)(mapStateToProps, 'mapStateToProps') : undefined;
@@ -36858,7 +37616,7 @@
 	exports.default = [whenMapStateToPropsIsFunction, whenMapStateToPropsIsMissing];
 
 /***/ },
-/* 567 */
+/* 571 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -36872,7 +37630,7 @@
 	exports.whenMergePropsIsFunction = whenMergePropsIsFunction;
 	exports.whenMergePropsIsOmitted = whenMergePropsIsOmitted;
 
-	var _verifyPlainObject = __webpack_require__(565);
+	var _verifyPlainObject = __webpack_require__(569);
 
 	var _verifyPlainObject2 = _interopRequireDefault(_verifyPlainObject);
 
@@ -36922,7 +37680,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 568 */
+/* 572 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -36932,7 +37690,7 @@
 	exports.pureFinalPropsSelectorFactory = pureFinalPropsSelectorFactory;
 	exports.default = finalPropsSelectorFactory;
 
-	var _verifySubselectors = __webpack_require__(569);
+	var _verifySubselectors = __webpack_require__(573);
 
 	var _verifySubselectors2 = _interopRequireDefault(_verifySubselectors);
 
@@ -37041,7 +37799,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 569 */
+/* 573 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -37049,7 +37807,7 @@
 	exports.__esModule = true;
 	exports.default = verifySubselectors;
 
-	var _warning = __webpack_require__(538);
+	var _warning = __webpack_require__(542);
 
 	var _warning2 = _interopRequireDefault(_warning);
 
@@ -37072,7 +37830,7 @@
 	}
 
 /***/ },
-/* 570 */
+/* 574 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -37087,11 +37845,13 @@
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _components = __webpack_require__(571);
+	var _account = __webpack_require__(536);
 
-	var _account = __webpack_require__(532);
+	var _post = __webpack_require__(575);
 
-	var _reactRedux = __webpack_require__(534);
+	var _reactRedux = __webpack_require__(538);
+
+	var _components = __webpack_require__(576);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -37110,141 +37870,57 @@
 	        var _this = _possibleConstructorReturn(this, (Header.__proto__ || Object.getPrototypeOf(Header)).call(this, props));
 
 	        _this.state = {
-	            view_status: 'DEFAULT'
+	            write: false
 	        };
-	        _this.handleView = _this.handleView.bind(_this);
-	        _this.handleLogin = _this.handleLogin.bind(_this);
-	        _this.handleLogout = _this.handleLogout.bind(_this);
-	        _this.handleSignup = _this.handleSignup.bind(_this);
-	        _this.handleRemove = _this.handleRemove.bind(_this);
 
+	        _this.handleWrite = _this.handleWrite.bind(_this);
+	        _this.handleClick = _this.handleClick.bind(_this);
 	        return _this;
 	    }
 
 	    _createClass(Header, [{
-	        key: 'handleView',
-	        value: function handleView(e) {
-	            switch (e) {
-	                case 'Header_default_login':
-	                    this.setState({
-	                        view_status: 'LOGIN'
-	                    });
-	                    break;
-	                case 'Header_default_signup':
-	                    this.setState({
-	                        view_status: 'SIGNUP'
-	                    });
-	                    break;
-	                case 'Header_loginAndSignup_no':
-	                    this.setState({
-	                        view_status: 'DEFAULT'
-	                    });
-	                    break;
-	                default:
-	                    break;
-	            }
-	        }
-	        /*
-	        handleLogin(username, password) {
-	            return this.props.loginRequest(username, password).then(
-	                () => {
-	                    if(this.props.login_status === 'SUCCESS') {
-	                        this.props.sessionRequest();
-	                        return true;
-	                    }
-	                    else {
-	                        return false;
-	                    }
-	                }
-	            );
-	        }
-	        */
-
-	    }, {
-	        key: 'handleLogin',
-	        value: function handleLogin() {
+	        key: 'handleWrite',
+	        value: function handleWrite(post, x, y) {
 	            var _this2 = this;
 
-	            var returnURI = encodeURIComponent(document.URL);
-	            return this.props.loginRequest(returnURI).then(function () {
-	                return _this2.props.login_status === 'SUCCESS';
-	            });
-	        }
-	    }, {
-	        key: 'handleLogout',
-	        value: function handleLogout() {
-	            var _this3 = this;
-
-	            return this.props.logoutRequest().then(function () {
-	                _this3.props.sessionRequest();
-	            });
-	        }
-	    }, {
-	        key: 'handleSignup',
-	        value: function handleSignup(username, password) {
-	            var _this4 = this;
-
-	            return this.props.signupRequest(username, password).then(function () {
-	                if (_this4.props.signup_status === 'SUCCESS') {
-	                    _this4.handleLogin(username, password);
+	            this.setState({ write: !this.state.write });
+	            var request = {
+	                body: {
+	                    content: post.content,
+	                    writer: this.props.session.currentUser,
+	                    coords: {
+	                        x: x,
+	                        y: y
+	                    }
+	                }
+	            };
+	            return this.props.writeRequest(request).then(function () {
+	                if (_this2.props.write.status === 'SUCCESS') {
 	                    return true;
 	                } else {
+	                    $.notify('글쓰기 에러');
 	                    return false;
 	                }
 	            });
 	        }
 	    }, {
-	        key: 'handleRemove',
-	        value: function handleRemove() {
-	            var _this5 = this;
-
-	            return this.props.removeRequest(this.props.session_currentUser).then(function () {
-	                return _this5.props.remove_status === 'SUCCESS';
-	            });
-	        }
-	    }, {
-	        key: 'componentWillReceiveProps',
-	        value: function componentWillReceiveProps(nextProps) {
-	            if (nextProps.session_currentUser) {
-	                this.setState({
-	                    view_status: 'LOGGED_IN'
-	                });
-	            } else {
-	                if (this.state.view_status === 'LOGGED_IN') {
-	                    this.setState({
-	                        view_status: 'DEFAULT'
-	                    });
-	                }
-	            }
+	        key: 'handleClick',
+	        value: function handleClick() {
+	            this.setState({ write: !this.state.write });
 	        }
 	    }, {
 	        key: 'render',
 	        value: function render() {
-	            var header = void 0;
-	            switch (this.state.view_status) {
-	                case 'DEFAULT':
-	                    header = _react2.default.createElement(_components.Header_default, { handleView: this.handleView });
-	                    break;
-	                case 'LOGGED_IN':
-	                    header = _react2.default.createElement(_components.Header_loggedIn, { session_currentUser: this.props.session_currentUser, onLogout: this.handleLogout, onRemove: this.handleRemove });
-	                    break;
-	                case 'LOGIN':
-	                case 'SIGNUP':
-	                    header = _react2.default.createElement(_components.Header_loginAndSignup, { handleView: this.handleView, loginOrSignup: this.state.view_status, onLogin: this.handleLogin, onSignup: this.handleSignup });
-	                    break;
-	                default:
-	                    header = _react2.default.createElement(_components.Header_default, { handleView: this.handleView });
-	            }
-
 	            return _react2.default.createElement(
 	                'div',
 	                { className: 'header' },
-	                _react2.default.createElement(
+	                this.props.session.currentUser ? _react2.default.createElement(
 	                    'a',
-	                    { href: '/auth/login' },
-	                    'abab'
-	                ),
-	                header
+	                    { className: 'writepost_button', onClick: this.handleClick },
+	                    'Write'
+	                ) : null,
+	                _react2.default.createElement(_components.Header_User, { user: this.props.session.currentUser }),
+	                this.state.write ? _react2.default.createElement(_components.WritePost, { handleWrite: this.handleWrite }) : null
 	            );
 	        }
 	    }]);
@@ -37254,31 +37930,23 @@
 
 	var mapStateToProps = function mapStateToProps(state) {
 	    return {
-	        login_status: state.account.login.status,
-	        signup_status: state.account.signup.status,
-	        remove_status: state.account.remove.status,
-	        session_currentUser: state.account.session.currentUser
+	        session: {
+	            currentUser: state.account.session.currentUser
+	        },
+	        write: {
+	            status: state.post.write.status,
+	            id: state.post.write.id
+	        }
 	    };
 	};
 	var mapDispatchToProps = function mapDispatchToProps(dispatch) {
 	    return {
-	        // loginRequest : (username, password) => {
-	        //     return dispatch(loginRequest(username, password));
-	        // }
-	        loginRequest: function loginRequest(returnURI) {
-	            return dispatch((0, _account.loginRequest)(returnURI));
-	        },
-	        signupRequest: function signupRequest(username, password) {
-	            return dispatch((0, _account.signupRequest)(username, password));
-	        },
 	        sessionRequest: function sessionRequest() {
 	            return dispatch((0, _account.sessionRequest)());
 	        },
-	        logoutRequest: function logoutRequest() {
-	            return dispatch((0, _account.logoutRequest)());
-	        },
-	        removeRequest: function removeRequest(username) {
-	            return dispatch((0, _account.removeRequest)(username));
+	        writeRequest: function writeRequest(request) {
+	            console.log('writeRequest called');
+	            return dispatch((0, _post.writeRequest)(request));
 	        }
 	    };
 	};
@@ -37286,880 +37954,7 @@
 	exports.default = (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps)(Header);
 
 /***/ },
-/* 571 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-	exports.WritePost = exports.ShowThePost = exports.PostList = exports.Post = exports.Header_loginAndSignup = exports.Header_loggedIn = exports.Header_default = undefined;
-
-	var _Header_default = __webpack_require__(572);
-
-	var _Header_default2 = _interopRequireDefault(_Header_default);
-
-	var _Header_loggedIn = __webpack_require__(573);
-
-	var _Header_loggedIn2 = _interopRequireDefault(_Header_loggedIn);
-
-	var _Header_loginAndSignup = __webpack_require__(574);
-
-	var _Header_loginAndSignup2 = _interopRequireDefault(_Header_loginAndSignup);
-
-	var _Post = __webpack_require__(575);
-
-	var _Post2 = _interopRequireDefault(_Post);
-
-	var _PostList = __webpack_require__(576);
-
-	var _PostList2 = _interopRequireDefault(_PostList);
-
-	var _ShowThePost = __webpack_require__(577);
-
-	var _ShowThePost2 = _interopRequireDefault(_ShowThePost);
-
-	var _WritePost = __webpack_require__(578);
-
-	var _WritePost2 = _interopRequireDefault(_WritePost);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	exports.Header_default = _Header_default2.default;
-	exports.Header_loggedIn = _Header_loggedIn2.default;
-	exports.Header_loginAndSignup = _Header_loginAndSignup2.default;
-	exports.Post = _Post2.default;
-	exports.PostList = _PostList2.default;
-	exports.ShowThePost = _ShowThePost2.default;
-	exports.WritePost = _WritePost2.default;
-
-/***/ },
-/* 572 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	var _react = __webpack_require__(299);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	var Header_default = function (_React$Component) {
-	    _inherits(Header_default, _React$Component);
-
-	    function Header_default(props) {
-	        _classCallCheck(this, Header_default);
-
-	        var _this = _possibleConstructorReturn(this, (Header_default.__proto__ || Object.getPrototypeOf(Header_default)).call(this, props));
-
-	        _this.handleClick = _this.handleClick.bind(_this);
-	        return _this;
-	    }
-
-	    _createClass(Header_default, [{
-	        key: 'handleClick',
-	        value: function handleClick(e) {
-	            this.props.handleView(e.target.value);
-	        }
-	    }, {
-	        key: 'render',
-	        value: function render() {
-	            return _react2.default.createElement(
-	                'div',
-	                { className: 'header_login_and_signup' },
-	                _react2.default.createElement(
-	                    'button',
-	                    { className: 'header_inputs', onClick: this.handleClick, value: 'Header_default_login' },
-	                    '\uB85C\uADF8\uC778'
-	                ),
-	                _react2.default.createElement(
-	                    'button',
-	                    { className: 'header_inputs', onClick: this.handleClick, value: 'Header_default_signup' },
-	                    '\uD68C\uC6D0\uAC00\uC785'
-	                )
-	            );
-	        }
-	    }]);
-
-	    return Header_default;
-	}(_react2.default.Component);
-
-	exports.default = Header_default;
-
-/***/ },
-/* 573 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	var _react = __webpack_require__(299);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	var Header_loggedIn = function (_React$Component) {
-	    _inherits(Header_loggedIn, _React$Component);
-
-	    function Header_loggedIn(props) {
-	        _classCallCheck(this, Header_loggedIn);
-
-	        return _possibleConstructorReturn(this, (Header_loggedIn.__proto__ || Object.getPrototypeOf(Header_loggedIn)).call(this, props));
-	    }
-
-	    _createClass(Header_loggedIn, [{
-	        key: 'render',
-	        value: function render() {
-	            return _react2.default.createElement(
-	                'div',
-	                { className: 'header_loggedIn' },
-	                _react2.default.createElement(
-	                    'div',
-	                    { className: 'header_user' },
-	                    this.props.session_currentUser.displayName
-	                ),
-	                _react2.default.createElement(
-	                    'div',
-	                    { className: 'header_logout_and_remove' },
-	                    _react2.default.createElement(
-	                        'button',
-	                        { className: 'header_inputs', onClick: this.props.onLogout },
-	                        '\uB85C\uADF8\uC544\uC6C3'
-	                    ),
-	                    _react2.default.createElement(
-	                        'button',
-	                        { className: 'header_inputs', onClick: this.props.onRemove },
-	                        '\uD68C\uC6D0\uC0AD\uC81C'
-	                    )
-	                )
-	            );
-	        }
-	    }]);
-
-	    return Header_loggedIn;
-	}(_react2.default.Component);
-
-	exports.default = Header_loggedIn;
-
-/***/ },
-/* 574 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	var _react = __webpack_require__(299);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	var Header_loginAndSignup = function (_React$Component) {
-	    _inherits(Header_loginAndSignup, _React$Component);
-
-	    function Header_loginAndSignup(props) {
-	        _classCallCheck(this, Header_loginAndSignup);
-
-	        var _this = _possibleConstructorReturn(this, (Header_loginAndSignup.__proto__ || Object.getPrototypeOf(Header_loginAndSignup)).call(this, props));
-
-	        _this.state = {
-	            username: '',
-	            password: ''
-	        };
-	        _this.handleClick = _this.handleClick.bind(_this);
-	        _this.handleChange = _this.handleChange.bind(_this);
-	        return _this;
-	    }
-
-	    _createClass(Header_loginAndSignup, [{
-	        key: 'handleClick',
-	        value: function handleClick(e) {
-	            var _this2 = this;
-
-	            if (e.target.value === 'Header_loginAndSignup_ok') {
-	                if (!this.state.username || this.state.username === '') {
-	                    $('.header_inputs_id').notify('아이디를 입력하세요', { position: 'top center' });
-	                } else if (!this.state.password || this.state.password === '') {
-	                    $('.header_inputs_password').notify('비밀번호를 입력하세요', { position: 'top center' });
-	                } else if (this.props.loginOrSignup === 'LOGIN') {
-	                    return this.props.onLogin(this.state.username, this.state.password).then(function (success) {
-	                        if (!success) {
-	                            $.notify('로그인 실패', { position: 'top center' });
-	                            _this2.setState({
-	                                username: '',
-	                                password: ''
-	                            });
-	                        }
-	                    });
-	                } else {
-	                    return this.props.onSignup(this.state.username, this.state.password).then(function (success) {
-	                        if (!success) {
-	                            $.notify('회원가입 실패', { position: 'top center' });
-	                            _this2.setState({
-	                                username: '',
-	                                password: ''
-	                            });
-	                        }
-	                    });
-	                }
-	            } else if (e.target.value === 'Header_loginAndSignup_no') {
-	                this.props.handleView(e.target.value);
-	            }
-	        }
-	    }, {
-	        key: 'handleChange',
-	        value: function handleChange(e) {
-	            var nextState = {};
-	            nextState[e.target.name] = e.target.value;
-	            this.setState(nextState);
-	        }
-	    }, {
-	        key: 'render',
-	        value: function render() {
-	            return _react2.default.createElement(
-	                'div',
-	                { className: 'header_loginAndSignup' },
-	                _react2.default.createElement(
-	                    'div',
-	                    { className: 'header_informloginAndSignup' },
-	                    this.props.loginOrSignup === 'LOGIN' ? '로그인' : '회원가입'
-	                ),
-	                _react2.default.createElement(
-	                    'div',
-	                    { className: 'header_id_and_password' },
-	                    _react2.default.createElement('input', {
-	                        type: 'text',
-	                        name: 'username',
-	                        className: 'header_inputs header_inputs_id',
-	                        placeholder: '\uC544\uC774\uB514',
-	                        onChange: this.handleChange,
-	                        value: this.state.username }),
-	                    _react2.default.createElement('input', {
-	                        type: 'password',
-	                        name: 'password',
-	                        className: 'header_inputs header_inputs_password',
-	                        placeholder: '\uBE44\uBC00\uBC88\uD638',
-	                        onChange: this.handleChange,
-	                        value: this.state.password })
-	                ),
-	                _react2.default.createElement(
-	                    'div',
-	                    { className: 'header_ok_and_no' },
-	                    _react2.default.createElement(
-	                        'button',
-	                        {
-	                            className: 'header_inputs',
-	                            onClick: this.handleClick,
-	                            value: 'Header_loginAndSignup_ok' },
-	                        '\uD655\uC778'
-	                    ),
-	                    _react2.default.createElement(
-	                        'button',
-	                        {
-	                            className: 'header_inputs',
-	                            onClick: this.handleClick,
-	                            value: 'Header_loginAndSignup_no' },
-	                        '\uCDE8\uC18C'
-	                    )
-	                )
-	            );
-	        }
-	    }]);
-
-	    return Header_loginAndSignup;
-	}(_react2.default.Component);
-
-	exports.default = Header_loginAndSignup;
-
-/***/ },
 /* 575 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	var _react = __webpack_require__(299);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	var Post = function (_React$Component) {
-	    _inherits(Post, _React$Component);
-
-	    function Post(props) {
-	        _classCallCheck(this, Post);
-
-	        var _this = _possibleConstructorReturn(this, (Post.__proto__ || Object.getPrototypeOf(Post)).call(this, props));
-
-	        _this.handleClick = _this.handleClick.bind(_this);
-	        return _this;
-	    }
-
-	    _createClass(Post, [{
-	        key: 'handleClick',
-	        value: function handleClick() {
-	            this.props.onPostClick(this.props.post);
-	        }
-	    }, {
-	        key: 'render',
-	        value: function render() {
-	            return _react2.default.createElement(
-	                'li',
-	                { className: this.props.ownership ? 'draggable li_mine' : 'draggable', onClick: this.handleClick },
-	                this.props.post.title + ' - ' + this.props.post.username
-	            );
-	        }
-	    }]);
-
-	    return Post;
-	}(_react2.default.Component);
-
-	exports.default = Post;
-
-/***/ },
-/* 576 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	var _react = __webpack_require__(299);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var _Post = __webpack_require__(575);
-
-	var _Post2 = _interopRequireDefault(_Post);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	var PostList = function (_React$Component) {
-	    _inherits(PostList, _React$Component);
-
-	    function PostList(props) {
-	        _classCallCheck(this, PostList);
-
-	        return _possibleConstructorReturn(this, (PostList.__proto__ || Object.getPrototypeOf(PostList)).call(this, props));
-	    }
-
-	    _createClass(PostList, [{
-	        key: 'render',
-	        value: function render() {
-	            var _this2 = this;
-
-	            var dataToComponent = function dataToComponent(data) {
-	                return data.map(function (data, i) {
-	                    return _react2.default.createElement(_Post2.default, {
-	                        post: data,
-	                        key: i,
-	                        index: i,
-	                        ownership: data.username === _this2.props.currentUser,
-	                        onPostClick: _this2.props.onPostClick
-	                    });
-	                });
-	            };
-	            return _react2.default.createElement(
-	                'ul',
-	                { className: 'post_list' },
-	                dataToComponent(this.props.list)
-	            );
-	        }
-	    }]);
-
-	    return PostList;
-	}(_react2.default.Component);
-
-	exports.default = PostList;
-
-/***/ },
-/* 577 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	var _react = __webpack_require__(299);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	var ShowThePost = function (_React$Component) {
-	    _inherits(ShowThePost, _React$Component);
-
-	    function ShowThePost(props) {
-	        _classCallCheck(this, ShowThePost);
-
-	        var _this = _possibleConstructorReturn(this, (ShowThePost.__proto__ || Object.getPrototypeOf(ShowThePost)).call(this, props));
-
-	        _this.handleClick = _this.handleClick.bind(_this);
-	        return _this;
-	    }
-
-	    _createClass(ShowThePost, [{
-	        key: 'handleClick',
-	        value: function handleClick(e) {
-	            if (e.target.name === 'modify') {
-	                this.props.onModify();
-	            } else if (e.target.name === 'remove') {
-	                this.props.onRemove();
-	            } else {
-	                return;
-	            }
-	        }
-	    }, {
-	        key: 'render',
-	        value: function render() {
-	            var post_modify_and_remove = _react2.default.createElement(
-	                'div',
-	                { id: 'post_modify_and_remove' },
-	                _react2.default.createElement(
-	                    'button',
-	                    { name: 'modify', onClick: this.handleClick, className: 'post_inputs', style: { float: 'left' } },
-	                    '\uC218\uC815'
-	                ),
-	                _react2.default.createElement(
-	                    'button',
-	                    { name: 'remove', onClick: this.handleClick, className: 'post_inputs' },
-	                    '\uC0AD\uC81C'
-	                )
-	            );
-	            return _react2.default.createElement(
-	                'div',
-	                null,
-	                _react2.default.createElement(
-	                    'p',
-	                    { className: 'post_username' },
-	                    this.props.post.username
-	                ),
-	                _react2.default.createElement(
-	                    'p',
-	                    { className: 'post_title' },
-	                    this.props.post.title
-	                ),
-	                _react2.default.createElement(
-	                    'p',
-	                    { className: 'post_content' },
-	                    this.props.post.content
-	                ),
-	                this.props.currentUser && this.props.currentUser === this.props.post.username ? post_modify_and_remove : undefined
-	            );
-	        }
-	    }]);
-
-	    return ShowThePost;
-	}(_react2.default.Component);
-
-	exports.default = ShowThePost;
-
-/***/ },
-/* 578 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	var _react = __webpack_require__(299);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	var WritePost = function (_React$Component) {
-	    _inherits(WritePost, _React$Component);
-
-	    function WritePost(props) {
-	        _classCallCheck(this, WritePost);
-
-	        var _this = _possibleConstructorReturn(this, (WritePost.__proto__ || Object.getPrototypeOf(WritePost)).call(this, props));
-
-	        _this.state = {
-	            title: '',
-	            content: ''
-	        };
-	        _this.handleClick = _this.handleClick.bind(_this);
-	        _this.handleChange = _this.handleChange.bind(_this);
-	        return _this;
-	    }
-
-	    _createClass(WritePost, [{
-	        key: 'handleClick',
-	        value: function handleClick() {
-	            var _this2 = this;
-
-	            return this.props.handleWriteOrModify(this.state).then(function (success) {
-	                if (success) {
-	                    _this2.setState({ title: '', content: '' });
-	                }
-	            });
-	        }
-	    }, {
-	        key: 'componentWillReceiveProps',
-	        value: function componentWillReceiveProps(nextProps) {
-	            if (nextProps.post) {
-	                this.setState({ title: nextProps.post.title, content: nextProps.post.content });
-	            } else if (this.props.post) {
-	                this.setState({ title: '', content: '' });
-	            }
-	        }
-	    }, {
-	        key: 'handleChange',
-	        value: function handleChange(e) {
-	            var nextState = {};
-	            nextState[e.target.name] = e.target.value;
-	            this.setState(nextState);
-	        }
-	    }, {
-	        key: 'render',
-	        value: function render() {
-	            return _react2.default.createElement(
-	                'div',
-	                null,
-	                _react2.default.createElement('textarea', { onChange: this.handleChange, value: this.state.title, name: 'title', placeholder: '\uC81C\uBAA9' }),
-	                _react2.default.createElement('br', null),
-	                _react2.default.createElement('textarea', { onChange: this.handleChange, value: this.state.content, name: 'content', placeholder: '\uB0B4\uC6A9' }),
-	                _react2.default.createElement('br', null),
-	                _react2.default.createElement(
-	                    'button',
-	                    { onClick: this.handleClick },
-	                    '\uAE00\uC4F0\uAE30'
-	                )
-	            );
-	        }
-	    }]);
-
-	    return WritePost;
-	}(_react2.default.Component);
-
-	exports.default = WritePost;
-
-/***/ },
-/* 579 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	var _react = __webpack_require__(299);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var _components = __webpack_require__(571);
-
-	var _post = __webpack_require__(580);
-
-	var _reactRedux = __webpack_require__(534);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	var Home = function (_React$Component) {
-	    _inherits(Home, _React$Component);
-
-	    function Home(props) {
-	        _classCallCheck(this, Home);
-
-	        var _this = _possibleConstructorReturn(this, (Home.__proto__ || Object.getPrototypeOf(Home)).call(this, props));
-
-	        _this.state = {
-	            post: {
-	                title: undefined,
-	                content: undefined,
-	                username: undefined,
-	                _id: undefined
-	            },
-	            modify: false
-	        };
-
-	        _this.handlePostClick = _this.handlePostClick.bind(_this);
-	        _this.handleWriteOrModify = _this.handleWriteOrModify.bind(_this);
-	        _this.handleModify = _this.handleModify.bind(_this);
-	        _this.handleRemove = _this.handleRemove.bind(_this);
-	        return _this;
-	    }
-
-	    _createClass(Home, [{
-	        key: 'componentWillMount',
-	        value: function componentWillMount() {
-	            interact('.draggable').draggable({
-	                snap: {
-	                    targets: [{ x: 20, y: 450, range: 50 }],
-	                    endOnly: true
-	                },
-	                autoScroll: true,
-	                // call this function on every dragmove event
-	                onmove: dragMoveListener
-
-	            });
-	            function dragMoveListener(event) {
-	                var target = event.target,
-
-	                // keep the dragged position in the data-x/data-y attributes
-	                x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx,
-	                    y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
-
-	                // translate the element
-	                target.style.webkitTransform = target.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
-
-	                // update the posiion attributes
-	                target.setAttribute('data-x', x);
-	                target.setAttribute('data-y', y);
-	            }
-	            window.dragMoveListener = dragMoveListener;
-	            this.props.loadListRequest();
-	        }
-	    }, {
-	        key: 'handlePostClick',
-	        value: function handlePostClick(post) {
-	            this.setState({
-	                post: {
-	                    title: post.title,
-	                    content: post.content,
-	                    username: post.username,
-	                    _id: post._id
-	                },
-	                modify: false
-	            });
-	        }
-	    }, {
-	        key: 'handleWriteOrModify',
-	        value: function handleWriteOrModify(post) {
-	            var _this2 = this;
-
-	            var post_with_Information = {
-	                title: post.title,
-	                content: post.content,
-	                username: this.props.session.currentUser,
-	                _id: undefined
-	            };
-
-	            if (this.state.modify) {
-	                post_with_Information._id = this.state.post._id;
-	                return this.props.modifyRequest(post_with_Information).then(function () {
-	                    if (_this2.props.modify.status === 'SUCCESS') {
-	                        _this2.handlePostClick(post_with_Information);
-	                        _this2.props.loadListRequest();
-	                        return true;
-	                    } else {
-	                        $.notify('수정 에러');
-	                        return false;
-	                    }
-	                });
-	            } else {
-	                return this.props.writeRequest(post_with_Information).then(function () {
-	                    if (_this2.props.write.status === 'SUCCESS') {
-	                        post_with_Information._id = _this2.props.write._id;
-	                        _this2.handlePostClick(post_with_Information);
-	                        _this2.props.loadListRequest();
-	                        return true;
-	                    } else {
-	                        $.notify('글쓰기 에러');
-	                        return false;
-	                    }
-	                });
-	            }
-	        }
-	    }, {
-	        key: 'handleModify',
-	        value: function handleModify() {
-	            this.setState({
-	                modify: !this.state.modify
-	            });
-	        }
-	    }, {
-	        key: 'handleRemove',
-	        value: function handleRemove() {
-	            var _this3 = this;
-
-	            return this.props.removeRequest(this.state.post._id).then(function () {
-	                if (_this3.props.remove.status === 'SUCCESS') {
-	                    _this3.setState({
-	                        post: {
-	                            title: undefined,
-	                            content: undefined,
-	                            username: undefined,
-	                            _id: undefined
-	                        },
-	                        modify: false
-	                    });
-	                    _this3.props.loadListRequest();
-	                    return true;
-	                }
-	            });
-	        }
-	    }, {
-	        key: 'render',
-	        value: function render() {
-	            console.log('Why it is called 4 times?');
-	            var view_WritePost = undefined;
-	            if (this.props.session.currentUser) {
-	                if (this.state.modify) {
-	                    view_WritePost = _react2.default.createElement(_components.WritePost, { currentUser: this.props.session.currentUser, handleWriteOrModify: this.handleWriteOrModify, post: this.state.post });
-	                } else {
-	                    view_WritePost = _react2.default.createElement(_components.WritePost, { currentUser: this.props.session.currentUser, handleWriteOrModify: this.handleWriteOrModify });
-	                }
-	            }
-	            return _react2.default.createElement(
-	                'div',
-	                { className: 'home' },
-	                _react2.default.createElement(
-	                    'div',
-	                    { className: 'home_half' },
-	                    _react2.default.createElement(_components.PostList, { list: this.props.loadList.list, onPostClick: this.handlePostClick, currentUser: this.props.session.currentUser })
-	                ),
-	                _react2.default.createElement(
-	                    'div',
-	                    { className: 'home_half' },
-	                    _react2.default.createElement(_components.ShowThePost, { post: this.state.post, currentUser: this.props.session.currentUser, onModify: this.handleModify, onRemove: this.handleRemove }),
-	                    _react2.default.createElement('hr', null),
-	                    this.state.modify ? _react2.default.createElement(
-	                        'h1',
-	                        null,
-	                        '\uC218\uC815'
-	                    ) : undefined,
-	                    view_WritePost
-	                )
-	            );
-	        }
-	    }]);
-
-	    return Home;
-	}(_react2.default.Component);
-
-	var mapStateToProps = function mapStateToProps(state) {
-	    return {
-	        session: {
-	            currentUser: state.account.session.currentUser
-	        },
-	        loadList: {
-	            status: state.post.loadList.status,
-	            list: state.post.loadList.list
-	        },
-	        write: {
-	            status: state.post.write.status,
-	            _id: state.post.write._id
-	        },
-	        modify: {
-	            status: state.post.modify.status
-	        },
-	        remove: {
-	            status: state.post.remove.status
-	        }
-	    };
-	};
-	var mapDispatchToProps = function mapDispatchToProps(dispatch) {
-	    return {
-	        loadListRequest: function loadListRequest() {
-	            return dispatch((0, _post.loadListRequest)());
-	        },
-	        writeRequest: function writeRequest(post) {
-	            return dispatch((0, _post.writeRequest)(post));
-	        },
-	        modifyRequest: function modifyRequest(post) {
-	            return dispatch((0, _post.modifyRequest)(post));
-	        },
-	        removeRequest: function removeRequest(_id) {
-	            return dispatch((0, _post.removeRequest)(_id));
-	        }
-	    };
-	};
-
-	exports.default = (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps)(Home);
-
-/***/ },
-/* 580 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -38188,7 +37983,7 @@
 	exports.removeSuccess = removeSuccess;
 	exports.removeFailure = removeFailure;
 
-	var _actions = __webpack_require__(533);
+	var _actions = __webpack_require__(537);
 
 	function loadListRequest() {}
 	function loadList() {}
@@ -38214,9 +38009,12 @@
 	exports.loadListRequest = loadListRequest = function loadListRequest() {
 	    return function (dispatch) {
 	        dispatch(loadList());
-
 	        return fetch('/api/post/loadList', {
-	            method: 'GET'
+	            method: 'GET',
+	            headers: {
+	                'pragma': 'no-cache',
+	                'cache-control': 'no-cache'
+	            }
 	        }).then(function (res) {
 	            return res.json();
 	        }).then(function (res) {
@@ -38248,46 +38046,60 @@
 	    };
 	};
 
-	/*
-	loadRequest = () => {
-	    return (dispatch) => {
+	exports.loadRequest = loadRequest = function loadRequest(id) {
+	    return function (dispatch) {
 	        dispatch(load());
-
-
-	    }
+	        return fetch('/api/post/load/' + id, {
+	            method: 'GET',
+	            headers: {
+	                'pragma': 'no-cache',
+	                'cache-control': 'no-cache'
+	            }
+	        }).then(function (res) {
+	            return res.json();
+	        }).then(function (res) {
+	            if (res.success) {
+	                dispatch(loadSuccess(res.post));
+	            } else {
+	                dispatch(loadFailure());
+	            }
+	        }).catch(function (error) {
+	            console.log(error);
+	            dispatch(loadFailure());
+	        });
+	    };
 	};
-	load = () => {
+	exports.load = load = function load() {
 	    return {
-	        type : POST_LOAD
-	    }
+	        type: _actions.POST_LOAD
+	    };
 	};
-	loadSuccess = (post) => {
+	exports.loadSuccess = loadSuccess = function loadSuccess(post) {
 	    return {
-	        type : POST_LOAD_SUCCESS,
-	        post
-	    }
+	        type: _actions.POST_LOAD_SUCCESS,
+	        post: post
+	    };
 	};
-	loadFailure = () => {
+	exports.loadFailure = loadFailure = function loadFailure() {
 	    return {
-	        type : POST_LOAD_FAILURE
-	    }
+	        type: _actions.POST_LOAD_FAILURE
+	    };
 	};
-	*/
 
-	exports.writeRequest = writeRequest = function writeRequest(post) {
+	exports.writeRequest = writeRequest = function writeRequest(request) {
 	    return function (dispatch) {
 	        dispatch(write());
-
 	        return fetch('/api/post/write', {
 	            method: 'POST',
 	            headers: { 'Content-Type': 'application/json' },
 	            credentials: 'include',
-	            body: JSON.stringify(post)
+	            body: JSON.stringify(request.body)
 	        }).then(function (res) {
 	            return res.json();
 	        }).then(function (res) {
-	            if (res.success) dispatch(writeSuccess(res._id));else dispatch(writeFailure());
-	        }).catch(function (error) {
+	            if (res.success) dispatch(writeSuccess(res.post));else dispatch(writeFailure());
+	        }).catch(function (err) {
+	            console.log(err);
 	            dispatch(writeFailure());
 	        });
 	    };
@@ -38297,10 +38109,10 @@
 	        type: _actions.POST_WRITE
 	    };
 	};
-	exports.writeSuccess = writeSuccess = function writeSuccess(_id) {
+	exports.writeSuccess = writeSuccess = function writeSuccess(post) {
 	    return {
 	        type: _actions.POST_WRITE_SUCCESS,
-	        _id: _id
+	        post: post
 	    };
 	};
 	exports.writeFailure = writeFailure = function writeFailure() {
@@ -38309,20 +38121,22 @@
 	    };
 	};
 
-	exports.modifyRequest = modifyRequest = function modifyRequest(post) {
+	exports.modifyRequest = modifyRequest = function modifyRequest(request) {
 	    return function (dispatch) {
 	        dispatch(modify());
 
-	        return fetch('/api/post/modify', {
+	        var Fetch_Address = '/api/post/modify/' + request.mode;
+
+	        return fetch(Fetch_Address, {
 	            method: 'PUT',
 	            headers: { 'Content-Type': 'application/json' },
 	            credentials: 'include',
-	            body: JSON.stringify(post)
+	            body: JSON.stringify(request.body)
 	        }).then(function (res) {
 	            return res.json();
 	        }).then(function (res) {
 	            if (res.success) {
-	                dispatch(modifySuccess());
+	                dispatch(modifySuccess(request.index, request.body));
 	            } else {
 	                dispatch(modifyFailure());
 	            }
@@ -38337,9 +38151,11 @@
 	        type: _actions.POST_MODIFY
 	    };
 	};
-	exports.modifySuccess = modifySuccess = function modifySuccess() {
+	exports.modifySuccess = modifySuccess = function modifySuccess(index, post) {
 	    return {
-	        type: _actions.POST_MODIFY_SUCCESS
+	        type: _actions.POST_MODIFY_SUCCESS,
+	        index: index,
+	        post: post
 	    };
 	};
 	exports.modifyFailure = modifyFailure = function modifyFailure() {
@@ -38348,7 +38164,7 @@
 	    };
 	};
 
-	exports.removeRequest = removeRequest = function removeRequest(_id) {
+	exports.removeRequest = removeRequest = function removeRequest(request) {
 	    return function (dispatch) {
 	        dispatch(remove());
 
@@ -38356,16 +38172,17 @@
 	            method: 'DELETE',
 	            headers: { 'Content-Type': 'application/json' },
 	            credentials: 'include',
-	            body: JSON.stringify({ _id: _id })
+	            body: JSON.stringify(request.body)
 	        }).then(function (res) {
 	            return res.json();
 	        }).then(function (res) {
 	            if (res.success) {
-	                dispatch(removeSuccess());
+	                dispatch(removeSuccess(request.index));
 	            } else {
 	                dispatch(removeFailure());
 	            }
 	        }).catch(function (error) {
+	            console.log(error);
 	            dispatch(removeFailure());
 	        });
 	    };
@@ -38375,8 +38192,9 @@
 	        type: _actions.POST_REMOVE
 	    };
 	};
-	exports.removeSuccess = removeSuccess = function removeSuccess() {
+	exports.removeSuccess = removeSuccess = function removeSuccess(index) {
 	    return {
+	        index: index,
 	        type: _actions.POST_REMOVE_SUCCESS
 	    };
 	};
@@ -38385,6 +38203,6378 @@
 	        type: _actions.POST_REMOVE_FAILURE
 	    };
 	};
+
+/***/ },
+/* 576 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	exports.WritePost = exports.PostList = exports.Post = exports.Header_User = undefined;
+
+	var _Header_User = __webpack_require__(577);
+
+	var _Header_User2 = _interopRequireDefault(_Header_User);
+
+	var _Post = __webpack_require__(578);
+
+	var _Post2 = _interopRequireDefault(_Post);
+
+	var _PostList = __webpack_require__(580);
+
+	var _PostList2 = _interopRequireDefault(_PostList);
+
+	var _WritePost = __webpack_require__(581);
+
+	var _WritePost2 = _interopRequireDefault(_WritePost);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	exports.Header_User = _Header_User2.default;
+	exports.Post = _Post2.default;
+	exports.PostList = _PostList2.default;
+	exports.WritePost = _WritePost2.default;
+
+/***/ },
+/* 577 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _react = __webpack_require__(299);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var Header_user = function (_React$Component) {
+	    _inherits(Header_user, _React$Component);
+
+	    function Header_user(props) {
+	        _classCallCheck(this, Header_user);
+
+	        var _this = _possibleConstructorReturn(this, (Header_user.__proto__ || Object.getPrototypeOf(Header_user)).call(this, props));
+
+	        _this.handleLogin = _this.handleLogin.bind(_this);
+	        _this.handleLogout = _this.handleLogout.bind(_this);
+	        return _this;
+	    }
+
+	    _createClass(Header_user, [{
+	        key: 'handleLogin',
+	        value: function handleLogin() {
+	            var returnURI = encodeURIComponent(document.URL);
+	            location.href = 'auth/login?return=' + returnURI;
+	        }
+	    }, {
+	        key: 'handleLogout',
+	        value: function handleLogout() {
+	            location.href = 'auth/logout';
+	        }
+	    }, {
+	        key: 'render',
+	        value: function render() {
+	            var view = void 0;
+	            if (this.props.user) {
+	                if (this.props.user.id === 'INIT') view = _react2.default.createElement(
+	                    'a',
+	                    null,
+	                    'Loading ...'
+	                );else view = _react2.default.createElement(
+	                    'a',
+	                    { className: 'username', onClick: this.handleLogout },
+	                    this.props.user.displayName
+	                );
+	            } else {
+	                view = _react2.default.createElement(
+	                    'a',
+	                    { onClick: this.handleLogin },
+	                    'Login'
+	                );
+	            }
+
+	            return view;
+	        }
+	    }]);
+
+	    return Header_user;
+	}(_react2.default.Component);
+
+	exports.default = Header_user;
+
+/***/ },
+/* 578 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _react = __webpack_require__(299);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _interact = __webpack_require__(579);
+
+	var _interact2 = _interopRequireDefault(_interact);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var Post = function (_React$Component) {
+	    _inherits(Post, _React$Component);
+
+	    function Post(props) {
+	        _classCallCheck(this, Post);
+
+	        var _this = _possibleConstructorReturn(this, (Post.__proto__ || Object.getPrototypeOf(Post)).call(this, props));
+
+	        _this.state = {
+	            coords: _this.props.post.coords,
+	            content: _this.props.post.content,
+	            moving: false,
+	            post_button_style: {
+	                display: 'none'
+	            }
+	        };
+
+	        _this.handleClick = _this.handleClick.bind(_this);
+	        _this.handleMoveStart = _this.handleMoveStart.bind(_this);
+	        _this.handleMove = _this.handleMove.bind(_this);
+	        _this.handleRemove = _this.handleRemove.bind(_this);
+	        _this.handleModify = _this.handleModify.bind(_this);
+	        _this.handleModify_View = _this.handleModify_View.bind(_this);
+	        _this.handleModify_View_change = _this.handleModify_View_change.bind(_this);
+
+	        return _this;
+	    }
+
+	    _createClass(Post, [{
+	        key: 'componentDidMount',
+	        value: function componentDidMount() {
+	            if (this.props.ownership) {
+	                var dragMoveListener = function dragMoveListener(event) {
+	                    var target = event.target,
+
+	                    // keep the dragged position in the data-x/data-y attributes
+	                    x_coord = (parseFloat(target.getAttribute('data-x_coord')) || 0) + event.dx,
+	                        y_coord = (parseFloat(target.getAttribute('data-y_coord')) || 0) + event.dy;
+	                    // translate the element
+	                    target.style.webkitTransform = target.style.transform = 'translate(' + x_coord + 'px, ' + y_coord + 'px)';
+
+	                    // update the posiion attributes
+	                    target.setAttribute('data-x_coord', x_coord);
+	                    target.setAttribute('data-y_coord', y_coord);
+	                };
+
+	                (0, _interact2.default)(document.getElementById(this.props.post.id)).draggable({
+	                    autoScroll: false,
+	                    onmove: dragMoveListener,
+	                    onstart: this.handleMoveStart,
+	                    onend: this.handleMove
+	                }).styleCursor(false);
+	            }
+
+	            this.textarea.style.cssText = 'height:' + this.textarea.scrollHeight + 'px';
+	        }
+	    }, {
+	        key: 'handleClick',
+	        value: function handleClick() {
+	            this.setState({
+	                post_button_style: {
+	                    display: this.state.post_button_style.display === 'none' ? 'inline' : 'none'
+	                }
+	            });
+	        }
+	    }, {
+	        key: 'handleMoveStart',
+	        value: function handleMoveStart() {
+	            this.setState({
+	                moving: true
+	            });
+	        }
+	    }, {
+	        key: 'handleMove',
+	        value: function handleMove(event) {
+	            var target = event.target;
+	            var post = {
+	                id: target.getAttribute('id'),
+	                index: this.props.index,
+	                coords: {
+	                    x: target.getAttribute('data-x_coord'),
+	                    y: target.getAttribute('data-y_coord')
+	                }
+	            };
+	            this.setState({
+	                coords: post.coords,
+	                moving: false
+	            });
+	            this.props.onPostMove(post);
+	        }
+	    }, {
+	        key: 'handleRemove',
+	        value: function handleRemove() {
+	            this.props.onPostRemove({ id: this.props.post.id, index: this.props.index });
+	        }
+	    }, {
+	        key: 'handleModify',
+	        value: function handleModify() {
+	            this.props.onPostModify({
+	                id: this.props.post.id,
+	                content: this.state.content,
+	                index: this.props.index
+	            });
+	            this.handleModify_View();
+	            this.handleClick();
+	        }
+	    }, {
+	        key: 'handleModify_View',
+	        value: function handleModify_View() {
+	            this.setState({
+	                modifying: !this.state.modifying
+	            });
+	        }
+	    }, {
+	        key: 'handleModify_View_change',
+	        value: function handleModify_View_change(e) {
+	            var value = e.target.value;
+	            this.setState({
+	                content: value
+	            });
+	            e.target.style.cssText = 'height:auto; padding:0';
+	            e.target.style.cssText = 'height:' + e.target.scrollHeight + 'px';
+	        }
+	    }, {
+	        key: 'render',
+	        value: function render() {
+	            var _this2 = this;
+
+	            var coords = Object.assign({}, this.state.coords);
+	            var style = {
+	                WebkitTransform: 'translate(' + coords.x + 'px, ' + coords.y + 'px)',
+	                transform: 'translate(' + coords.x + 'px, ' + coords.y + 'px)'
+	            };
+	            var props = {
+	                'data-x_coord': coords.x,
+	                'data-y_coord': coords.y
+	            };
+
+	            return _react2.default.createElement(
+	                'div',
+	                _extends({}, props, { style: style, className: this.props.ownership ? 'post mine' : 'post notmine', onClick: this.handleClick, id: this.props.post.id }),
+	                _react2.default.createElement(
+	                    'div',
+	                    { className: 'posthead' },
+	                    _react2.default.createElement(
+	                        'div',
+	                        { className: 'writer' },
+	                        this.props.post.writer.displayName
+	                    ),
+	                    this.props.ownership ? _react2.default.createElement(
+	                        'div',
+	                        { className: 'delete', onClick: this.handleRemove },
+	                        'X'
+	                    ) : null
+	                ),
+	                _react2.default.createElement(
+	                    'div',
+	                    { className: 'postbody' },
+	                    _react2.default.createElement('textarea', { ref: function ref(textarea) {
+	                            _this2.textarea = textarea;
+	                        }, onChange: this.handleModify_View_change, onBlur: this.handleModify, value: this.state.content, readOnly: !this.props.ownership })
+	                )
+	            );
+	        }
+	    }]);
+
+	    return Post;
+	}(_react2.default.Component);
+
+	exports.default = Post;
+
+/***/ },
+/* 579 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/**
+	 * interact.js v1.2.8
+	 *
+	 * Copyright (c) 2012-2015 Taye Adeyemi <dev@taye.me>
+	 * Open source under the MIT License.
+	 * https://raw.github.com/taye/interact.js/master/LICENSE
+	 */
+	(function (realWindow) {
+	    'use strict';
+
+	    // return early if there's no window to work with (eg. Node.js)
+	    if (!realWindow) { return; }
+
+	    var // get wrapped window if using Shadow DOM polyfill
+	        window = (function () {
+	            // create a TextNode
+	            var el = realWindow.document.createTextNode('');
+
+	            // check if it's wrapped by a polyfill
+	            if (el.ownerDocument !== realWindow.document
+	                && typeof realWindow.wrap === 'function'
+	                && realWindow.wrap(el) === el) {
+	                // return wrapped window
+	                return realWindow.wrap(realWindow);
+	            }
+
+	            // no Shadow DOM polyfil or native implementation
+	            return realWindow;
+	        }()),
+
+	        document           = window.document,
+	        DocumentFragment   = window.DocumentFragment   || blank,
+	        SVGElement         = window.SVGElement         || blank,
+	        SVGSVGElement      = window.SVGSVGElement      || blank,
+	        SVGElementInstance = window.SVGElementInstance || blank,
+	        HTMLElement        = window.HTMLElement        || window.Element,
+
+	        PointerEvent = (window.PointerEvent || window.MSPointerEvent),
+	        pEventTypes,
+
+	        hypot = Math.hypot || function (x, y) { return Math.sqrt(x * x + y * y); },
+
+	        tmpXY = {},     // reduce object creation in getXY()
+
+	        documents       = [],   // all documents being listened to
+
+	        interactables   = [],   // all set interactables
+	        interactions    = [],   // all interactions
+
+	        dynamicDrop     = false,
+
+	        // {
+	        //      type: {
+	        //          selectors: ['selector', ...],
+	        //          contexts : [document, ...],
+	        //          listeners: [[listener, useCapture], ...]
+	        //      }
+	        //  }
+	        delegatedEvents = {},
+
+	        defaultOptions = {
+	            base: {
+	                accept        : null,
+	                actionChecker : null,
+	                styleCursor   : true,
+	                preventDefault: 'auto',
+	                origin        : { x: 0, y: 0 },
+	                deltaSource   : 'page',
+	                allowFrom     : null,
+	                ignoreFrom    : null,
+	                _context      : document,
+	                dropChecker   : null
+	            },
+
+	            drag: {
+	                enabled: false,
+	                manualStart: true,
+	                max: Infinity,
+	                maxPerElement: 1,
+
+	                snap: null,
+	                restrict: null,
+	                inertia: null,
+	                autoScroll: null,
+
+	                axis: 'xy'
+	            },
+
+	            drop: {
+	                enabled: false,
+	                accept: null,
+	                overlap: 'pointer'
+	            },
+
+	            resize: {
+	                enabled: false,
+	                manualStart: false,
+	                max: Infinity,
+	                maxPerElement: 1,
+
+	                snap: null,
+	                restrict: null,
+	                inertia: null,
+	                autoScroll: null,
+
+	                square: false,
+	                preserveAspectRatio: false,
+	                axis: 'xy',
+
+	                // use default margin
+	                margin: NaN,
+
+	                // object with props left, right, top, bottom which are
+	                // true/false values to resize when the pointer is over that edge,
+	                // CSS selectors to match the handles for each direction
+	                // or the Elements for each handle
+	                edges: null,
+
+	                // a value of 'none' will limit the resize rect to a minimum of 0x0
+	                // 'negate' will alow the rect to have negative width/height
+	                // 'reposition' will keep the width/height positive by swapping
+	                // the top and bottom edges and/or swapping the left and right edges
+	                invert: 'none'
+	            },
+
+	            gesture: {
+	                manualStart: false,
+	                enabled: false,
+	                max: Infinity,
+	                maxPerElement: 1,
+
+	                restrict: null
+	            },
+
+	            perAction: {
+	                manualStart: false,
+	                max: Infinity,
+	                maxPerElement: 1,
+
+	                snap: {
+	                    enabled     : false,
+	                    endOnly     : false,
+	                    range       : Infinity,
+	                    targets     : null,
+	                    offsets     : null,
+
+	                    relativePoints: null
+	                },
+
+	                restrict: {
+	                    enabled: false,
+	                    endOnly: false
+	                },
+
+	                autoScroll: {
+	                    enabled     : false,
+	                    container   : null,     // the item that is scrolled (Window or HTMLElement)
+	                    margin      : 60,
+	                    speed       : 300       // the scroll speed in pixels per second
+	                },
+
+	                inertia: {
+	                    enabled          : false,
+	                    resistance       : 10,    // the lambda in exponential decay
+	                    minSpeed         : 100,   // target speed must be above this for inertia to start
+	                    endSpeed         : 10,    // the speed at which inertia is slow enough to stop
+	                    allowResume      : true,  // allow resuming an action in inertia phase
+	                    zeroResumeDelta  : true,  // if an action is resumed after launch, set dx/dy to 0
+	                    smoothEndDuration: 300    // animate to snap/restrict endOnly if there's no inertia
+	                }
+	            },
+
+	            _holdDuration: 600
+	        },
+
+	        // Things related to autoScroll
+	        autoScroll = {
+	            interaction: null,
+	            i: null,    // the handle returned by window.setInterval
+	            x: 0, y: 0, // Direction each pulse is to scroll in
+
+	            // scroll the window by the values in scroll.x/y
+	            scroll: function () {
+	                var options = autoScroll.interaction.target.options[autoScroll.interaction.prepared.name].autoScroll,
+	                    container = options.container || getWindow(autoScroll.interaction.element),
+	                    now = new Date().getTime(),
+	                    // change in time in seconds
+	                    dtx = (now - autoScroll.prevTimeX) / 1000,
+	                    dty = (now - autoScroll.prevTimeY) / 1000,
+	                    vx, vy, sx, sy;
+
+	                // displacement
+	                if (options.velocity) {
+	                  vx = options.velocity.x;
+	                  vy = options.velocity.y;
+	                }
+	                else {
+	                  vx = vy = options.speed
+	                }
+	 
+	                sx = vx * dtx;
+	                sy = vy * dty;
+
+	                if (sx >= 1 || sy >= 1) {
+	                    if (isWindow(container)) {
+	                        container.scrollBy(autoScroll.x * sx, autoScroll.y * sy);
+	                    }
+	                    else if (container) {
+	                        container.scrollLeft += autoScroll.x * sx;
+	                        container.scrollTop  += autoScroll.y * sy;
+	                    }
+
+	                    if (sx >=1) autoScroll.prevTimeX = now;
+	                    if (sy >= 1) autoScroll.prevTimeY = now;
+	                }
+
+	                if (autoScroll.isScrolling) {
+	                    cancelFrame(autoScroll.i);
+	                    autoScroll.i = reqFrame(autoScroll.scroll);
+	                }
+	            },
+
+	            isScrolling: false,
+	            prevTimeX: 0,
+	            prevTimeY: 0,
+
+	            start: function (interaction) {
+	                autoScroll.isScrolling = true;
+	                cancelFrame(autoScroll.i);
+
+	                autoScroll.interaction = interaction;
+	                autoScroll.prevTimeX = new Date().getTime();
+	                autoScroll.prevTimeY = new Date().getTime();
+	                autoScroll.i = reqFrame(autoScroll.scroll);
+	            },
+
+	            stop: function () {
+	                autoScroll.isScrolling = false;
+	                cancelFrame(autoScroll.i);
+	            }
+	        },
+
+	        // Does the browser support touch input?
+	        supportsTouch = (('ontouchstart' in window) || window.DocumentTouch && document instanceof window.DocumentTouch),
+
+	        // Does the browser support PointerEvents
+	        // Avoid PointerEvent bugs introduced in Chrome 55
+	        supportsPointerEvent = PointerEvent && !/Chrome/.test(navigator.userAgent),
+
+	        // Less Precision with touch input
+	        margin = supportsTouch || supportsPointerEvent? 20: 10,
+
+	        pointerMoveTolerance = 1,
+
+	        // for ignoring browser's simulated mouse events
+	        prevTouchTime = 0,
+
+	        // Allow this many interactions to happen simultaneously
+	        maxInteractions = Infinity,
+
+	        // Check if is IE9 or older
+	        actionCursors = (document.all && !window.atob) ? {
+	            drag    : 'move',
+	            resizex : 'e-resize',
+	            resizey : 's-resize',
+	            resizexy: 'se-resize',
+
+	            resizetop        : 'n-resize',
+	            resizeleft       : 'w-resize',
+	            resizebottom     : 's-resize',
+	            resizeright      : 'e-resize',
+	            resizetopleft    : 'se-resize',
+	            resizebottomright: 'se-resize',
+	            resizetopright   : 'ne-resize',
+	            resizebottomleft : 'ne-resize',
+
+	            gesture : ''
+	        } : {
+	            drag    : 'move',
+	            resizex : 'ew-resize',
+	            resizey : 'ns-resize',
+	            resizexy: 'nwse-resize',
+
+	            resizetop        : 'ns-resize',
+	            resizeleft       : 'ew-resize',
+	            resizebottom     : 'ns-resize',
+	            resizeright      : 'ew-resize',
+	            resizetopleft    : 'nwse-resize',
+	            resizebottomright: 'nwse-resize',
+	            resizetopright   : 'nesw-resize',
+	            resizebottomleft : 'nesw-resize',
+
+	            gesture : ''
+	        },
+
+	        actionIsEnabled = {
+	            drag   : true,
+	            resize : true,
+	            gesture: true
+	        },
+
+	        // because Webkit and Opera still use 'mousewheel' event type
+	        wheelEvent = 'onmousewheel' in document? 'mousewheel': 'wheel',
+
+	        eventTypes = [
+	            'dragstart',
+	            'dragmove',
+	            'draginertiastart',
+	            'dragend',
+	            'dragenter',
+	            'dragleave',
+	            'dropactivate',
+	            'dropdeactivate',
+	            'dropmove',
+	            'drop',
+	            'resizestart',
+	            'resizemove',
+	            'resizeinertiastart',
+	            'resizeend',
+	            'gesturestart',
+	            'gesturemove',
+	            'gestureinertiastart',
+	            'gestureend',
+
+	            'down',
+	            'move',
+	            'up',
+	            'cancel',
+	            'tap',
+	            'doubletap',
+	            'hold'
+	        ],
+
+	        globalEvents = {},
+
+	        // Opera Mobile must be handled differently
+	        isOperaMobile = navigator.appName == 'Opera' &&
+	            supportsTouch &&
+	            navigator.userAgent.match('Presto'),
+
+	        // scrolling doesn't change the result of getClientRects on iOS 7
+	        isIOS7 = (/iP(hone|od|ad)/.test(navigator.platform)
+	                         && /OS 7[^\d]/.test(navigator.appVersion)),
+
+	        // prefix matchesSelector
+	        prefixedMatchesSelector = 'matches' in Element.prototype?
+	                'matches': 'webkitMatchesSelector' in Element.prototype?
+	                    'webkitMatchesSelector': 'mozMatchesSelector' in Element.prototype?
+	                        'mozMatchesSelector': 'oMatchesSelector' in Element.prototype?
+	                            'oMatchesSelector': 'msMatchesSelector',
+
+	        // will be polyfill function if browser is IE8
+	        ie8MatchesSelector,
+
+	        // native requestAnimationFrame or polyfill
+	        reqFrame = realWindow.requestAnimationFrame,
+	        cancelFrame = realWindow.cancelAnimationFrame,
+
+	        // Events wrapper
+	        events = (function () {
+	            var useAttachEvent = ('attachEvent' in window) && !('addEventListener' in window),
+	                addEvent       = useAttachEvent?  'attachEvent': 'addEventListener',
+	                removeEvent    = useAttachEvent?  'detachEvent': 'removeEventListener',
+	                on             = useAttachEvent? 'on': '',
+
+	                elements          = [],
+	                targets           = [],
+	                attachedListeners = [];
+
+	            function add (element, type, listener, useCapture) {
+	                var elementIndex = indexOf(elements, element),
+	                    target = targets[elementIndex];
+
+	                if (!target) {
+	                    target = {
+	                        events: {},
+	                        typeCount: 0
+	                    };
+
+	                    elementIndex = elements.push(element) - 1;
+	                    targets.push(target);
+
+	                    attachedListeners.push((useAttachEvent ? {
+	                            supplied: [],
+	                            wrapped : [],
+	                            useCount: []
+	                        } : null));
+	                }
+
+	                if (!target.events[type]) {
+	                    target.events[type] = [];
+	                    target.typeCount++;
+	                }
+
+	                if (!contains(target.events[type], listener)) {
+	                    var ret;
+
+	                    if (useAttachEvent) {
+	                        var listeners = attachedListeners[elementIndex],
+	                            listenerIndex = indexOf(listeners.supplied, listener);
+
+	                        var wrapped = listeners.wrapped[listenerIndex] || function (event) {
+	                            if (!event.immediatePropagationStopped) {
+	                                event.target = event.srcElement;
+	                                event.currentTarget = element;
+
+	                                event.preventDefault = event.preventDefault || preventDef;
+	                                event.stopPropagation = event.stopPropagation || stopProp;
+	                                event.stopImmediatePropagation = event.stopImmediatePropagation || stopImmProp;
+
+	                                if (/mouse|click/.test(event.type)) {
+	                                    event.pageX = event.clientX + getWindow(element).document.documentElement.scrollLeft;
+	                                    event.pageY = event.clientY + getWindow(element).document.documentElement.scrollTop;
+	                                }
+
+	                                listener(event);
+	                            }
+	                        };
+
+	                        ret = element[addEvent](on + type, wrapped, Boolean(useCapture));
+
+	                        if (listenerIndex === -1) {
+	                            listeners.supplied.push(listener);
+	                            listeners.wrapped.push(wrapped);
+	                            listeners.useCount.push(1);
+	                        }
+	                        else {
+	                            listeners.useCount[listenerIndex]++;
+	                        }
+	                    }
+	                    else {
+	                        ret = element[addEvent](type, listener, useCapture || false);
+	                    }
+	                    target.events[type].push(listener);
+
+	                    return ret;
+	                }
+	            }
+
+	            function remove (element, type, listener, useCapture) {
+	                var i,
+	                    elementIndex = indexOf(elements, element),
+	                    target = targets[elementIndex],
+	                    listeners,
+	                    listenerIndex,
+	                    wrapped = listener;
+
+	                if (!target || !target.events) {
+	                    return;
+	                }
+
+	                if (useAttachEvent) {
+	                    listeners = attachedListeners[elementIndex];
+	                    listenerIndex = indexOf(listeners.supplied, listener);
+	                    wrapped = listeners.wrapped[listenerIndex];
+	                }
+
+	                if (type === 'all') {
+	                    for (type in target.events) {
+	                        if (target.events.hasOwnProperty(type)) {
+	                            remove(element, type, 'all');
+	                        }
+	                    }
+	                    return;
+	                }
+
+	                if (target.events[type]) {
+	                    var len = target.events[type].length;
+
+	                    if (listener === 'all') {
+	                        for (i = 0; i < len; i++) {
+	                            remove(element, type, target.events[type][i], Boolean(useCapture));
+	                        }
+	                        return;
+	                    } else {
+	                        for (i = 0; i < len; i++) {
+	                            if (target.events[type][i] === listener) {
+	                                element[removeEvent](on + type, wrapped, useCapture || false);
+	                                target.events[type].splice(i, 1);
+
+	                                if (useAttachEvent && listeners) {
+	                                    listeners.useCount[listenerIndex]--;
+	                                    if (listeners.useCount[listenerIndex] === 0) {
+	                                        listeners.supplied.splice(listenerIndex, 1);
+	                                        listeners.wrapped.splice(listenerIndex, 1);
+	                                        listeners.useCount.splice(listenerIndex, 1);
+	                                    }
+	                                }
+
+	                                break;
+	                            }
+	                        }
+	                    }
+
+	                    if (target.events[type] && target.events[type].length === 0) {
+	                        target.events[type] = null;
+	                        target.typeCount--;
+	                    }
+	                }
+
+	                if (!target.typeCount) {
+	                    targets.splice(elementIndex, 1);
+	                    elements.splice(elementIndex, 1);
+	                    attachedListeners.splice(elementIndex, 1);
+	                }
+	            }
+
+	            function preventDef () {
+	                this.returnValue = false;
+	            }
+
+	            function stopProp () {
+	                this.cancelBubble = true;
+	            }
+
+	            function stopImmProp () {
+	                this.cancelBubble = true;
+	                this.immediatePropagationStopped = true;
+	            }
+
+	            return {
+	                add: add,
+	                remove: remove,
+	                useAttachEvent: useAttachEvent,
+
+	                _elements: elements,
+	                _targets: targets,
+	                _attachedListeners: attachedListeners
+	            };
+	        }());
+
+	    function blank () {}
+
+	    function isElement (o) {
+	        if (!o || (typeof o !== 'object')) { return false; }
+
+	        var _window = getWindow(o) || window;
+
+	        return (/object|function/.test(typeof _window.Element)
+	            ? o instanceof _window.Element //DOM2
+	            : o.nodeType === 1 && typeof o.nodeName === "string");
+	    }
+	    function isWindow (thing) { return thing === window || !!(thing && thing.Window) && (thing instanceof thing.Window); }
+	    function isDocFrag (thing) { return !!thing && thing instanceof DocumentFragment; }
+	    function isArray (thing) {
+	        return isObject(thing)
+	                && (typeof thing.length !== undefined)
+	                && isFunction(thing.splice);
+	    }
+	    function isObject   (thing) { return !!thing && (typeof thing === 'object'); }
+	    function isFunction (thing) { return typeof thing === 'function'; }
+	    function isNumber   (thing) { return typeof thing === 'number'  ; }
+	    function isBool     (thing) { return typeof thing === 'boolean' ; }
+	    function isString   (thing) { return typeof thing === 'string'  ; }
+
+	    function trySelector (value) {
+	        if (!isString(value)) { return false; }
+
+	        // an exception will be raised if it is invalid
+	        document.querySelector(value);
+	        return true;
+	    }
+
+	    function extend (dest, source) {
+	        for (var prop in source) {
+	            dest[prop] = source[prop];
+	        }
+	        return dest;
+	    }
+
+	    var prefixedPropREs = {
+	      webkit: /(Movement[XY]|Radius[XY]|RotationAngle|Force)$/
+	    };
+
+	    function pointerExtend (dest, source) {
+	        for (var prop in source) {
+	          var deprecated = false;
+
+	          // skip deprecated prefixed properties
+	          for (var vendor in prefixedPropREs) {
+	            if (prop.indexOf(vendor) === 0 && prefixedPropREs[vendor].test(prop)) {
+	              deprecated = true;
+	              break;
+	            }
+	          }
+
+	          if (!deprecated) {
+	            dest[prop] = source[prop];
+	          }
+	        }
+	        return dest;
+	    }
+
+	    function copyCoords (dest, src) {
+	        dest.page = dest.page || {};
+	        dest.page.x = src.page.x;
+	        dest.page.y = src.page.y;
+
+	        dest.client = dest.client || {};
+	        dest.client.x = src.client.x;
+	        dest.client.y = src.client.y;
+
+	        dest.timeStamp = src.timeStamp;
+	    }
+
+	    function setEventXY (targetObj, pointers, interaction) {
+	        var pointer = (pointers.length > 1
+	                       ? pointerAverage(pointers)
+	                       : pointers[0]);
+
+	        getPageXY(pointer, tmpXY, interaction);
+	        targetObj.page.x = tmpXY.x;
+	        targetObj.page.y = tmpXY.y;
+
+	        getClientXY(pointer, tmpXY, interaction);
+	        targetObj.client.x = tmpXY.x;
+	        targetObj.client.y = tmpXY.y;
+
+	        targetObj.timeStamp = new Date().getTime();
+	    }
+
+	    function setEventDeltas (targetObj, prev, cur) {
+	        targetObj.page.x     = cur.page.x      - prev.page.x;
+	        targetObj.page.y     = cur.page.y      - prev.page.y;
+	        targetObj.client.x   = cur.client.x    - prev.client.x;
+	        targetObj.client.y   = cur.client.y    - prev.client.y;
+	        targetObj.timeStamp = new Date().getTime() - prev.timeStamp;
+
+	        // set pointer velocity
+	        var dt = Math.max(targetObj.timeStamp / 1000, 0.001);
+	        targetObj.page.speed   = hypot(targetObj.page.x, targetObj.page.y) / dt;
+	        targetObj.page.vx      = targetObj.page.x / dt;
+	        targetObj.page.vy      = targetObj.page.y / dt;
+
+	        targetObj.client.speed = hypot(targetObj.client.x, targetObj.page.y) / dt;
+	        targetObj.client.vx    = targetObj.client.x / dt;
+	        targetObj.client.vy    = targetObj.client.y / dt;
+	    }
+
+	    function isNativePointer (pointer) {
+	        return (pointer instanceof window.Event
+	            || (supportsTouch && window.Touch && pointer instanceof window.Touch));
+	    }
+
+	    // Get specified X/Y coords for mouse or event.touches[0]
+	    function getXY (type, pointer, xy) {
+	        xy = xy || {};
+	        type = type || 'page';
+
+	        xy.x = pointer[type + 'X'];
+	        xy.y = pointer[type + 'Y'];
+
+	        return xy;
+	    }
+
+	    function getPageXY (pointer, page) {
+	        page = page || {};
+
+	        // Opera Mobile handles the viewport and scrolling oddly
+	        if (isOperaMobile && isNativePointer(pointer)) {
+	            getXY('screen', pointer, page);
+
+	            page.x += window.scrollX;
+	            page.y += window.scrollY;
+	        }
+	        else {
+	            getXY('page', pointer, page);
+	        }
+
+	        return page;
+	    }
+
+	    function getClientXY (pointer, client) {
+	        client = client || {};
+
+	        if (isOperaMobile && isNativePointer(pointer)) {
+	            // Opera Mobile handles the viewport and scrolling oddly
+	            getXY('screen', pointer, client);
+	        }
+	        else {
+	          getXY('client', pointer, client);
+	        }
+
+	        return client;
+	    }
+
+	    function getScrollXY (win) {
+	        win = win || window;
+	        return {
+	            x: win.scrollX || win.document.documentElement.scrollLeft,
+	            y: win.scrollY || win.document.documentElement.scrollTop
+	        };
+	    }
+
+	    function getPointerId (pointer) {
+	        return isNumber(pointer.pointerId)? pointer.pointerId : pointer.identifier;
+	    }
+
+	    function getActualElement (element) {
+	        return (element instanceof SVGElementInstance
+	            ? element.correspondingUseElement
+	            : element);
+	    }
+
+	    function getWindow (node) {
+	        if (isWindow(node)) {
+	            return node;
+	        }
+
+	        var rootNode = (node.ownerDocument || node);
+
+	        return rootNode.defaultView || rootNode.parentWindow || window;
+	    }
+
+	    function getElementClientRect (element) {
+	        var clientRect = (element instanceof SVGElement
+	                            ? element.getBoundingClientRect()
+	                            : element.getClientRects()[0]);
+
+	        return clientRect && {
+	            left  : clientRect.left,
+	            right : clientRect.right,
+	            top   : clientRect.top,
+	            bottom: clientRect.bottom,
+	            width : clientRect.width || clientRect.right - clientRect.left,
+	            height: clientRect.height || clientRect.bottom - clientRect.top
+	        };
+	    }
+
+	    function getElementRect (element) {
+	        var clientRect = getElementClientRect(element);
+
+	        if (!isIOS7 && clientRect) {
+	            var scroll = getScrollXY(getWindow(element));
+
+	            clientRect.left   += scroll.x;
+	            clientRect.right  += scroll.x;
+	            clientRect.top    += scroll.y;
+	            clientRect.bottom += scroll.y;
+	        }
+
+	        return clientRect;
+	    }
+
+	    function getTouchPair (event) {
+	        var touches = [];
+
+	        // array of touches is supplied
+	        if (isArray(event)) {
+	            touches[0] = event[0];
+	            touches[1] = event[1];
+	        }
+	        // an event
+	        else {
+	            if (event.type === 'touchend') {
+	                if (event.touches.length === 1) {
+	                    touches[0] = event.touches[0];
+	                    touches[1] = event.changedTouches[0];
+	                }
+	                else if (event.touches.length === 0) {
+	                    touches[0] = event.changedTouches[0];
+	                    touches[1] = event.changedTouches[1];
+	                }
+	            }
+	            else {
+	                touches[0] = event.touches[0];
+	                touches[1] = event.touches[1];
+	            }
+	        }
+
+	        return touches;
+	    }
+
+	    function pointerAverage (pointers) {
+	        var average = {
+	            pageX  : 0,
+	            pageY  : 0,
+	            clientX: 0,
+	            clientY: 0,
+	            screenX: 0,
+	            screenY: 0
+	        };
+	        var prop;
+
+	        for (var i = 0; i < pointers.length; i++) {
+	            for (prop in average) {
+	                average[prop] += pointers[i][prop];
+	            }
+	        }
+	        for (prop in average) {
+	            average[prop] /= pointers.length;
+	        }
+
+	        return average;
+	    }
+
+	    function touchBBox (event) {
+	        if (!event.length && !(event.touches && event.touches.length > 1)) {
+	            return;
+	        }
+
+	        var touches = getTouchPair(event),
+	            minX = Math.min(touches[0].pageX, touches[1].pageX),
+	            minY = Math.min(touches[0].pageY, touches[1].pageY),
+	            maxX = Math.max(touches[0].pageX, touches[1].pageX),
+	            maxY = Math.max(touches[0].pageY, touches[1].pageY);
+
+	        return {
+	            x: minX,
+	            y: minY,
+	            left: minX,
+	            top: minY,
+	            width: maxX - minX,
+	            height: maxY - minY
+	        };
+	    }
+
+	    function touchDistance (event, deltaSource) {
+	        deltaSource = deltaSource || defaultOptions.deltaSource;
+
+	        var sourceX = deltaSource + 'X',
+	            sourceY = deltaSource + 'Y',
+	            touches = getTouchPair(event);
+
+
+	        var dx = touches[0][sourceX] - touches[1][sourceX],
+	            dy = touches[0][sourceY] - touches[1][sourceY];
+
+	        return hypot(dx, dy);
+	    }
+
+	    function touchAngle (event, prevAngle, deltaSource) {
+	        deltaSource = deltaSource || defaultOptions.deltaSource;
+
+	        var sourceX = deltaSource + 'X',
+	            sourceY = deltaSource + 'Y',
+	            touches = getTouchPair(event),
+	            dx = touches[0][sourceX] - touches[1][sourceX],
+	            dy = touches[0][sourceY] - touches[1][sourceY],
+	            angle = 180 * Math.atan(dy / dx) / Math.PI;
+
+	        if (isNumber(prevAngle)) {
+	            var dr = angle - prevAngle,
+	                drClamped = dr % 360;
+
+	            if (drClamped > 315) {
+	                angle -= 360 + (angle / 360)|0 * 360;
+	            }
+	            else if (drClamped > 135) {
+	                angle -= 180 + (angle / 360)|0 * 360;
+	            }
+	            else if (drClamped < -315) {
+	                angle += 360 + (angle / 360)|0 * 360;
+	            }
+	            else if (drClamped < -135) {
+	                angle += 180 + (angle / 360)|0 * 360;
+	            }
+	        }
+
+	        return  angle;
+	    }
+
+	    function getOriginXY (interactable, element) {
+	        var origin = interactable
+	                ? interactable.options.origin
+	                : defaultOptions.origin;
+
+	        if (origin === 'parent') {
+	            origin = parentElement(element);
+	        }
+	        else if (origin === 'self') {
+	            origin = interactable.getRect(element);
+	        }
+	        else if (trySelector(origin)) {
+	            origin = closest(element, origin) || { x: 0, y: 0 };
+	        }
+
+	        if (isFunction(origin)) {
+	            origin = origin(interactable && element);
+	        }
+
+	        if (isElement(origin))  {
+	            origin = getElementRect(origin);
+	        }
+
+	        origin.x = ('x' in origin)? origin.x : origin.left;
+	        origin.y = ('y' in origin)? origin.y : origin.top;
+
+	        return origin;
+	    }
+
+	    // http://stackoverflow.com/a/5634528/2280888
+	    function _getQBezierValue(t, p1, p2, p3) {
+	        var iT = 1 - t;
+	        return iT * iT * p1 + 2 * iT * t * p2 + t * t * p3;
+	    }
+
+	    function getQuadraticCurvePoint(startX, startY, cpX, cpY, endX, endY, position) {
+	        return {
+	            x:  _getQBezierValue(position, startX, cpX, endX),
+	            y:  _getQBezierValue(position, startY, cpY, endY)
+	        };
+	    }
+
+	    // http://gizma.com/easing/
+	    function easeOutQuad (t, b, c, d) {
+	        t /= d;
+	        return -c * t*(t-2) + b;
+	    }
+
+	    function nodeContains (parent, child) {
+	        while (child) {
+	            if (child === parent) {
+	                return true;
+	            }
+
+	            child = child.parentNode;
+	        }
+
+	        return false;
+	    }
+
+	    function closest (child, selector) {
+	        var parent = parentElement(child);
+
+	        while (isElement(parent)) {
+	            if (matchesSelector(parent, selector)) { return parent; }
+
+	            parent = parentElement(parent);
+	        }
+
+	        return null;
+	    }
+
+	    function parentElement (node) {
+	        var parent = node.parentNode;
+
+	        if (isDocFrag(parent)) {
+	            // skip past #shado-root fragments
+	            while ((parent = parent.host) && isDocFrag(parent)) {}
+
+	            return parent;
+	        }
+
+	        return parent;
+	    }
+
+	    function inContext (interactable, element) {
+	        return interactable._context === element.ownerDocument
+	                || nodeContains(interactable._context, element);
+	    }
+
+	    function testIgnore (interactable, interactableElement, element) {
+	        var ignoreFrom = interactable.options.ignoreFrom;
+
+	        if (!ignoreFrom || !isElement(element)) { return false; }
+
+	        if (isString(ignoreFrom)) {
+	            return matchesUpTo(element, ignoreFrom, interactableElement);
+	        }
+	        else if (isElement(ignoreFrom)) {
+	            return nodeContains(ignoreFrom, element);
+	        }
+
+	        return false;
+	    }
+
+	    function testAllow (interactable, interactableElement, element) {
+	        var allowFrom = interactable.options.allowFrom;
+
+	        if (!allowFrom) { return true; }
+
+	        if (!isElement(element)) { return false; }
+
+	        if (isString(allowFrom)) {
+	            return matchesUpTo(element, allowFrom, interactableElement);
+	        }
+	        else if (isElement(allowFrom)) {
+	            return nodeContains(allowFrom, element);
+	        }
+
+	        return false;
+	    }
+
+	    function checkAxis (axis, interactable) {
+	        if (!interactable) { return false; }
+
+	        var thisAxis = interactable.options.drag.axis;
+
+	        return (axis === 'xy' || thisAxis === 'xy' || thisAxis === axis);
+	    }
+
+	    function checkSnap (interactable, action) {
+	        var options = interactable.options;
+
+	        if (/^resize/.test(action)) {
+	            action = 'resize';
+	        }
+
+	        return options[action].snap && options[action].snap.enabled;
+	    }
+
+	    function checkRestrict (interactable, action) {
+	        var options = interactable.options;
+
+	        if (/^resize/.test(action)) {
+	            action = 'resize';
+	        }
+
+	        return  options[action].restrict && options[action].restrict.enabled;
+	    }
+
+	    function checkAutoScroll (interactable, action) {
+	        var options = interactable.options;
+
+	        if (/^resize/.test(action)) {
+	            action = 'resize';
+	        }
+
+	        return  options[action].autoScroll && options[action].autoScroll.enabled;
+	    }
+
+	    function withinInteractionLimit (interactable, element, action) {
+	        var options = interactable.options,
+	            maxActions = options[action.name].max,
+	            maxPerElement = options[action.name].maxPerElement,
+	            activeInteractions = 0,
+	            targetCount = 0,
+	            targetElementCount = 0;
+
+	        for (var i = 0, len = interactions.length; i < len; i++) {
+	            var interaction = interactions[i],
+	                otherAction = interaction.prepared.name,
+	                active = interaction.interacting();
+
+	            if (!active) { continue; }
+
+	            activeInteractions++;
+
+	            if (activeInteractions >= maxInteractions) {
+	                return false;
+	            }
+
+	            if (interaction.target !== interactable) { continue; }
+
+	            targetCount += (otherAction === action.name)|0;
+
+	            if (targetCount >= maxActions) {
+	                return false;
+	            }
+
+	            if (interaction.element === element) {
+	                targetElementCount++;
+
+	                if (otherAction !== action.name || targetElementCount >= maxPerElement) {
+	                    return false;
+	                }
+	            }
+	        }
+
+	        return maxInteractions > 0;
+	    }
+
+	    // Test for the element that's "above" all other qualifiers
+	    function indexOfDeepestElement (elements) {
+	        var dropzone,
+	            deepestZone = elements[0],
+	            index = deepestZone? 0: -1,
+	            parent,
+	            deepestZoneParents = [],
+	            dropzoneParents = [],
+	            child,
+	            i,
+	            n;
+
+	        for (i = 1; i < elements.length; i++) {
+	            dropzone = elements[i];
+
+	            // an element might belong to multiple selector dropzones
+	            if (!dropzone || dropzone === deepestZone) {
+	                continue;
+	            }
+
+	            if (!deepestZone) {
+	                deepestZone = dropzone;
+	                index = i;
+	                continue;
+	            }
+
+	            // check if the deepest or current are document.documentElement or document.rootElement
+	            // - if the current dropzone is, do nothing and continue
+	            if (dropzone.parentNode === dropzone.ownerDocument) {
+	                continue;
+	            }
+	            // - if deepest is, update with the current dropzone and continue to next
+	            else if (deepestZone.parentNode === dropzone.ownerDocument) {
+	                deepestZone = dropzone;
+	                index = i;
+	                continue;
+	            }
+
+	            if (!deepestZoneParents.length) {
+	                parent = deepestZone;
+	                while (parent.parentNode && parent.parentNode !== parent.ownerDocument) {
+	                    deepestZoneParents.unshift(parent);
+	                    parent = parent.parentNode;
+	                }
+	            }
+
+	            // if this element is an svg element and the current deepest is
+	            // an HTMLElement
+	            if (deepestZone instanceof HTMLElement
+	                && dropzone instanceof SVGElement
+	                && !(dropzone instanceof SVGSVGElement)) {
+
+	                if (dropzone === deepestZone.parentNode) {
+	                    continue;
+	                }
+
+	                parent = dropzone.ownerSVGElement;
+	            }
+	            else {
+	                parent = dropzone;
+	            }
+
+	            dropzoneParents = [];
+
+	            while (parent.parentNode !== parent.ownerDocument) {
+	                dropzoneParents.unshift(parent);
+	                parent = parent.parentNode;
+	            }
+
+	            n = 0;
+
+	            // get (position of last common ancestor) + 1
+	            while (dropzoneParents[n] && dropzoneParents[n] === deepestZoneParents[n]) {
+	                n++;
+	            }
+
+	            var parents = [
+	                dropzoneParents[n - 1],
+	                dropzoneParents[n],
+	                deepestZoneParents[n]
+	            ];
+
+	            child = parents[0].lastChild;
+
+	            while (child) {
+	                if (child === parents[1]) {
+	                    deepestZone = dropzone;
+	                    index = i;
+	                    deepestZoneParents = [];
+
+	                    break;
+	                }
+	                else if (child === parents[2]) {
+	                    break;
+	                }
+
+	                child = child.previousSibling;
+	            }
+	        }
+
+	        return index;
+	    }
+
+	    function Interaction () {
+	        this.target          = null; // current interactable being interacted with
+	        this.element         = null; // the target element of the interactable
+	        this.dropTarget      = null; // the dropzone a drag target might be dropped into
+	        this.dropElement     = null; // the element at the time of checking
+	        this.prevDropTarget  = null; // the dropzone that was recently dragged away from
+	        this.prevDropElement = null; // the element at the time of checking
+
+	        this.prepared        = {     // action that's ready to be fired on next move event
+	            name : null,
+	            axis : null,
+	            edges: null
+	        };
+
+	        this.matches         = [];   // all selectors that are matched by target element
+	        this.matchElements   = [];   // corresponding elements
+
+	        this.inertiaStatus = {
+	            active       : false,
+	            smoothEnd    : false,
+	            ending       : false,
+
+	            startEvent: null,
+	            upCoords: {},
+
+	            xe: 0, ye: 0,
+	            sx: 0, sy: 0,
+
+	            t0: 0,
+	            vx0: 0, vys: 0,
+	            duration: 0,
+
+	            resumeDx: 0,
+	            resumeDy: 0,
+
+	            lambda_v0: 0,
+	            one_ve_v0: 0,
+	            i  : null
+	        };
+
+	        if (isFunction(Function.prototype.bind)) {
+	            this.boundInertiaFrame = this.inertiaFrame.bind(this);
+	            this.boundSmoothEndFrame = this.smoothEndFrame.bind(this);
+	        }
+	        else {
+	            var that = this;
+
+	            this.boundInertiaFrame = function () { return that.inertiaFrame(); };
+	            this.boundSmoothEndFrame = function () { return that.smoothEndFrame(); };
+	        }
+
+	        this.activeDrops = {
+	            dropzones: [],      // the dropzones that are mentioned below
+	            elements : [],      // elements of dropzones that accept the target draggable
+	            rects    : []       // the rects of the elements mentioned above
+	        };
+
+	        // keep track of added pointers
+	        this.pointers    = [];
+	        this.pointerIds  = [];
+	        this.downTargets = [];
+	        this.downTimes   = [];
+	        this.holdTimers  = [];
+
+	        // Previous native pointer move event coordinates
+	        this.prevCoords = {
+	            page     : { x: 0, y: 0 },
+	            client   : { x: 0, y: 0 },
+	            timeStamp: 0
+	        };
+	        // current native pointer move event coordinates
+	        this.curCoords = {
+	            page     : { x: 0, y: 0 },
+	            client   : { x: 0, y: 0 },
+	            timeStamp: 0
+	        };
+
+	        // Starting InteractEvent pointer coordinates
+	        this.startCoords = {
+	            page     : { x: 0, y: 0 },
+	            client   : { x: 0, y: 0 },
+	            timeStamp: 0
+	        };
+
+	        // Change in coordinates and time of the pointer
+	        this.pointerDelta = {
+	            page     : { x: 0, y: 0, vx: 0, vy: 0, speed: 0 },
+	            client   : { x: 0, y: 0, vx: 0, vy: 0, speed: 0 },
+	            timeStamp: 0
+	        };
+
+	        this.downEvent   = null;    // pointerdown/mousedown/touchstart event
+	        this.downPointer = {};
+
+	        this._eventTarget    = null;
+	        this._curEventTarget = null;
+
+	        this.prevEvent = null;      // previous action event
+	        this.tapTime   = 0;         // time of the most recent tap event
+	        this.prevTap   = null;
+
+	        this.startOffset    = { left: 0, right: 0, top: 0, bottom: 0 };
+	        this.restrictOffset = { left: 0, right: 0, top: 0, bottom: 0 };
+	        this.snapOffsets    = [];
+
+	        this.gesture = {
+	            start: { x: 0, y: 0 },
+
+	            startDistance: 0,   // distance between two touches of touchStart
+	            prevDistance : 0,
+	            distance     : 0,
+
+	            scale: 1,           // gesture.distance / gesture.startDistance
+
+	            startAngle: 0,      // angle of line joining two touches
+	            prevAngle : 0       // angle of the previous gesture event
+	        };
+
+	        this.snapStatus = {
+	            x       : 0, y       : 0,
+	            dx      : 0, dy      : 0,
+	            realX   : 0, realY   : 0,
+	            snappedX: 0, snappedY: 0,
+	            targets : [],
+	            locked  : false,
+	            changed : false
+	        };
+
+	        this.restrictStatus = {
+	            dx         : 0, dy         : 0,
+	            restrictedX: 0, restrictedY: 0,
+	            snap       : null,
+	            restricted : false,
+	            changed    : false
+	        };
+
+	        this.restrictStatus.snap = this.snapStatus;
+
+	        this.pointerIsDown   = false;
+	        this.pointerWasMoved = false;
+	        this.gesturing       = false;
+	        this.dragging        = false;
+	        this.resizing        = false;
+	        this.resizeAxes      = 'xy';
+
+	        this.mouse = false;
+
+	        interactions.push(this);
+	    }
+
+	    Interaction.prototype = {
+	        getPageXY  : function (pointer, xy) { return   getPageXY(pointer, xy, this); },
+	        getClientXY: function (pointer, xy) { return getClientXY(pointer, xy, this); },
+	        setEventXY : function (target, ptr) { return  setEventXY(target, ptr, this); },
+
+	        pointerOver: function (pointer, event, eventTarget) {
+	            if (this.prepared.name || !this.mouse) { return; }
+
+	            var curMatches = [],
+	                curMatchElements = [],
+	                prevTargetElement = this.element;
+
+	            this.addPointer(pointer);
+
+	            if (this.target
+	                && (testIgnore(this.target, this.element, eventTarget)
+	                    || !testAllow(this.target, this.element, eventTarget))) {
+	                // if the eventTarget should be ignored or shouldn't be allowed
+	                // clear the previous target
+	                this.target = null;
+	                this.element = null;
+	                this.matches = [];
+	                this.matchElements = [];
+	            }
+
+	            var elementInteractable = interactables.get(eventTarget),
+	                elementAction = (elementInteractable
+	                                 && !testIgnore(elementInteractable, eventTarget, eventTarget)
+	                                 && testAllow(elementInteractable, eventTarget, eventTarget)
+	                                 && validateAction(
+	                                     elementInteractable.getAction(pointer, event, this, eventTarget),
+	                                     elementInteractable));
+
+	            if (elementAction && !withinInteractionLimit(elementInteractable, eventTarget, elementAction)) {
+	                 elementAction = null;
+	            }
+
+	            function pushCurMatches (interactable, selector) {
+	                if (interactable
+	                    && inContext(interactable, eventTarget)
+	                    && !testIgnore(interactable, eventTarget, eventTarget)
+	                    && testAllow(interactable, eventTarget, eventTarget)
+	                    && matchesSelector(eventTarget, selector)) {
+
+	                    curMatches.push(interactable);
+	                    curMatchElements.push(eventTarget);
+	                }
+	            }
+
+	            if (elementAction) {
+	                this.target = elementInteractable;
+	                this.element = eventTarget;
+	                this.matches = [];
+	                this.matchElements = [];
+	            }
+	            else {
+	                interactables.forEachSelector(pushCurMatches);
+
+	                if (this.validateSelector(pointer, event, curMatches, curMatchElements)) {
+	                    this.matches = curMatches;
+	                    this.matchElements = curMatchElements;
+
+	                    this.pointerHover(pointer, event, this.matches, this.matchElements);
+	                    events.add(eventTarget,
+	                                        supportsPointerEvent? pEventTypes.move : 'mousemove',
+	                                        listeners.pointerHover);
+	                }
+	                else if (this.target) {
+	                    if (nodeContains(prevTargetElement, eventTarget)) {
+	                        this.pointerHover(pointer, event, this.matches, this.matchElements);
+	                        events.add(this.element,
+	                                            supportsPointerEvent? pEventTypes.move : 'mousemove',
+	                                            listeners.pointerHover);
+	                    }
+	                    else {
+	                        this.target = null;
+	                        this.element = null;
+	                        this.matches = [];
+	                        this.matchElements = [];
+	                    }
+	                }
+	            }
+	        },
+
+	        // Check what action would be performed on pointerMove target if a mouse
+	        // button were pressed and change the cursor accordingly
+	        pointerHover: function (pointer, event, eventTarget, curEventTarget, matches, matchElements) {
+	            var target = this.target;
+
+	            if (!this.prepared.name && this.mouse) {
+
+	                var action;
+
+	                // update pointer coords for defaultActionChecker to use
+	                this.setEventXY(this.curCoords, [pointer]);
+
+	                if (matches) {
+	                    action = this.validateSelector(pointer, event, matches, matchElements);
+	                }
+	                else if (target) {
+	                    action = validateAction(target.getAction(this.pointers[0], event, this, this.element), this.target);
+	                }
+
+	                if (target && target.options.styleCursor) {
+	                    if (action) {
+	                        target._doc.documentElement.style.cursor = getActionCursor(action);
+	                    }
+	                    else {
+	                        target._doc.documentElement.style.cursor = '';
+	                    }
+	                }
+	            }
+	            else if (this.prepared.name) {
+	                this.checkAndPreventDefault(event, target, this.element);
+	            }
+	        },
+
+	        pointerOut: function (pointer, event, eventTarget) {
+	            if (this.prepared.name) { return; }
+
+	            // Remove temporary event listeners for selector Interactables
+	            if (!interactables.get(eventTarget)) {
+	                events.remove(eventTarget,
+	                                       supportsPointerEvent? pEventTypes.move : 'mousemove',
+	                                       listeners.pointerHover);
+	            }
+
+	            if (this.target && this.target.options.styleCursor && !this.interacting()) {
+	                this.target._doc.documentElement.style.cursor = '';
+	            }
+	        },
+
+	        selectorDown: function (pointer, event, eventTarget, curEventTarget) {
+	            var that = this,
+	                // copy event to be used in timeout for IE8
+	                eventCopy = events.useAttachEvent? extend({}, event) : event,
+	                element = eventTarget,
+	                pointerIndex = this.addPointer(pointer),
+	                action;
+
+	            this.holdTimers[pointerIndex] = setTimeout(function () {
+	                that.pointerHold(events.useAttachEvent? eventCopy : pointer, eventCopy, eventTarget, curEventTarget);
+	            }, defaultOptions._holdDuration);
+
+	            this.pointerIsDown = true;
+
+	            // Check if the down event hits the current inertia target
+	            if (this.inertiaStatus.active && this.target.selector) {
+	                // climb up the DOM tree from the event target
+	                while (isElement(element)) {
+
+	                    // if this element is the current inertia target element
+	                    if (element === this.element
+	                        // and the prospective action is the same as the ongoing one
+	                        && validateAction(this.target.getAction(pointer, event, this, this.element), this.target).name === this.prepared.name) {
+
+	                        // stop inertia so that the next move will be a normal one
+	                        cancelFrame(this.inertiaStatus.i);
+	                        this.inertiaStatus.active = false;
+
+	                        this.collectEventTargets(pointer, event, eventTarget, 'down');
+	                        return;
+	                    }
+	                    element = parentElement(element);
+	                }
+	            }
+
+	            // do nothing if interacting
+	            if (this.interacting()) {
+	                this.collectEventTargets(pointer, event, eventTarget, 'down');
+	                return;
+	            }
+
+	            function pushMatches (interactable, selector, context) {
+	                var elements = ie8MatchesSelector
+	                    ? context.querySelectorAll(selector)
+	                    : undefined;
+
+	                if (inContext(interactable, element)
+	                    && !testIgnore(interactable, element, eventTarget)
+	                    && testAllow(interactable, element, eventTarget)
+	                    && matchesSelector(element, selector, elements)) {
+
+	                    that.matches.push(interactable);
+	                    that.matchElements.push(element);
+	                }
+	            }
+
+	            // update pointer coords for defaultActionChecker to use
+	            this.setEventXY(this.curCoords, [pointer]);
+	            this.downEvent = event;
+
+	            while (isElement(element) && !action) {
+	                this.matches = [];
+	                this.matchElements = [];
+
+	                interactables.forEachSelector(pushMatches);
+
+	                action = this.validateSelector(pointer, event, this.matches, this.matchElements);
+	                element = parentElement(element);
+	            }
+
+	            if (action) {
+	                this.prepared.name  = action.name;
+	                this.prepared.axis  = action.axis;
+	                this.prepared.edges = action.edges;
+
+	                this.collectEventTargets(pointer, event, eventTarget, 'down');
+
+	                return this.pointerDown(pointer, event, eventTarget, curEventTarget, action);
+	            }
+	            else {
+	                // do these now since pointerDown isn't being called from here
+	                this.downTimes[pointerIndex] = new Date().getTime();
+	                this.downTargets[pointerIndex] = eventTarget;
+	                pointerExtend(this.downPointer, pointer);
+
+	                copyCoords(this.prevCoords, this.curCoords);
+	                this.pointerWasMoved = false;
+	            }
+
+	            this.collectEventTargets(pointer, event, eventTarget, 'down');
+	        },
+
+	        // Determine action to be performed on next pointerMove and add appropriate
+	        // style and event Listeners
+	        pointerDown: function (pointer, event, eventTarget, curEventTarget, forceAction) {
+	            if (!forceAction && !this.inertiaStatus.active && this.pointerWasMoved && this.prepared.name) {
+	                this.checkAndPreventDefault(event, this.target, this.element);
+
+	                return;
+	            }
+
+	            this.pointerIsDown = true;
+	            this.downEvent = event;
+
+	            var pointerIndex = this.addPointer(pointer),
+	                action;
+
+	            // If it is the second touch of a multi-touch gesture, keep the
+	            // target the same and get a new action if a target was set by the
+	            // first touch
+	            if (this.pointerIds.length > 1 && this.target._element === this.element) {
+	                var newAction = validateAction(forceAction || this.target.getAction(pointer, event, this, this.element), this.target);
+
+	                if (withinInteractionLimit(this.target, this.element, newAction)) {
+	                    action = newAction;
+	                }
+
+	                this.prepared.name = null;
+	            }
+	            // Otherwise, set the target if there is no action prepared
+	            else if (!this.prepared.name) {
+	                var interactable = interactables.get(curEventTarget);
+
+	                if (interactable
+	                    && !testIgnore(interactable, curEventTarget, eventTarget)
+	                    && testAllow(interactable, curEventTarget, eventTarget)
+	                    && (action = validateAction(forceAction || interactable.getAction(pointer, event, this, curEventTarget), interactable, eventTarget))
+	                    && withinInteractionLimit(interactable, curEventTarget, action)) {
+	                    this.target = interactable;
+	                    this.element = curEventTarget;
+	                }
+	            }
+
+	            var target = this.target,
+	                options = target && target.options;
+
+	            if (target && (forceAction || !this.prepared.name)) {
+	                action = action || validateAction(forceAction || target.getAction(pointer, event, this, curEventTarget), target, this.element);
+
+	                this.setEventXY(this.startCoords, this.pointers);
+
+	                if (!action) { return; }
+
+	                if (options.styleCursor) {
+	                    target._doc.documentElement.style.cursor = getActionCursor(action);
+	                }
+
+	                this.resizeAxes = action.name === 'resize'? action.axis : null;
+
+	                if (action === 'gesture' && this.pointerIds.length < 2) {
+	                    action = null;
+	                }
+
+	                this.prepared.name  = action.name;
+	                this.prepared.axis  = action.axis;
+	                this.prepared.edges = action.edges;
+
+	                this.snapStatus.snappedX = this.snapStatus.snappedY =
+	                    this.restrictStatus.restrictedX = this.restrictStatus.restrictedY = NaN;
+
+	                this.downTimes[pointerIndex] = new Date().getTime();
+	                this.downTargets[pointerIndex] = eventTarget;
+	                pointerExtend(this.downPointer, pointer);
+
+	                copyCoords(this.prevCoords, this.startCoords);
+	                this.pointerWasMoved = false;
+
+	                this.checkAndPreventDefault(event, target, this.element);
+	            }
+	            // if inertia is active try to resume action
+	            else if (this.inertiaStatus.active
+	                && curEventTarget === this.element
+	                && validateAction(target.getAction(pointer, event, this, this.element), target).name === this.prepared.name) {
+
+	                cancelFrame(this.inertiaStatus.i);
+	                this.inertiaStatus.active = false;
+
+	                this.checkAndPreventDefault(event, target, this.element);
+	            }
+	        },
+
+	        setModifications: function (coords, preEnd) {
+	            var target         = this.target,
+	                shouldMove     = true,
+	                shouldSnap     = checkSnap(target, this.prepared.name)     && (!target.options[this.prepared.name].snap.endOnly     || preEnd),
+	                shouldRestrict = checkRestrict(target, this.prepared.name) && (!target.options[this.prepared.name].restrict.endOnly || preEnd);
+
+	            if (shouldSnap    ) { this.setSnapping   (coords); } else { this.snapStatus    .locked     = false; }
+	            if (shouldRestrict) { this.setRestriction(coords); } else { this.restrictStatus.restricted = false; }
+
+	            if (shouldSnap && this.snapStatus.locked && !this.snapStatus.changed) {
+	                shouldMove = shouldRestrict && this.restrictStatus.restricted && this.restrictStatus.changed;
+	            }
+	            else if (shouldRestrict && this.restrictStatus.restricted && !this.restrictStatus.changed) {
+	                shouldMove = false;
+	            }
+
+	            return shouldMove;
+	        },
+
+	        setStartOffsets: function (action, interactable, element) {
+	            var rect = interactable.getRect(element),
+	                origin = getOriginXY(interactable, element),
+	                snap = interactable.options[this.prepared.name].snap,
+	                restrict = interactable.options[this.prepared.name].restrict,
+	                width, height;
+
+	            if (rect) {
+	                this.startOffset.left = this.startCoords.page.x - rect.left;
+	                this.startOffset.top  = this.startCoords.page.y - rect.top;
+
+	                this.startOffset.right  = rect.right  - this.startCoords.page.x;
+	                this.startOffset.bottom = rect.bottom - this.startCoords.page.y;
+
+	                if ('width' in rect) { width = rect.width; }
+	                else { width = rect.right - rect.left; }
+	                if ('height' in rect) { height = rect.height; }
+	                else { height = rect.bottom - rect.top; }
+	            }
+	            else {
+	                this.startOffset.left = this.startOffset.top = this.startOffset.right = this.startOffset.bottom = 0;
+	            }
+
+	            this.snapOffsets.splice(0);
+
+	            var snapOffset = snap && snap.offset === 'startCoords'
+	                                ? {
+	                                    x: this.startCoords.page.x - origin.x,
+	                                    y: this.startCoords.page.y - origin.y
+	                                }
+	                                : snap && snap.offset || { x: 0, y: 0 };
+
+	            if (rect && snap && snap.relativePoints && snap.relativePoints.length) {
+	                for (var i = 0; i < snap.relativePoints.length; i++) {
+	                    this.snapOffsets.push({
+	                        x: this.startOffset.left - (width  * snap.relativePoints[i].x) + snapOffset.x,
+	                        y: this.startOffset.top  - (height * snap.relativePoints[i].y) + snapOffset.y
+	                    });
+	                }
+	            }
+	            else {
+	                this.snapOffsets.push(snapOffset);
+	            }
+
+	            if (rect && restrict.elementRect) {
+	                this.restrictOffset.left = this.startOffset.left - (width  * restrict.elementRect.left);
+	                this.restrictOffset.top  = this.startOffset.top  - (height * restrict.elementRect.top);
+
+	                this.restrictOffset.right  = this.startOffset.right  - (width  * (1 - restrict.elementRect.right));
+	                this.restrictOffset.bottom = this.startOffset.bottom - (height * (1 - restrict.elementRect.bottom));
+	            }
+	            else {
+	                this.restrictOffset.left = this.restrictOffset.top = this.restrictOffset.right = this.restrictOffset.bottom = 0;
+	            }
+	        },
+
+	        /*\
+	         * Interaction.start
+	         [ method ]
+	         *
+	         * Start an action with the given Interactable and Element as tartgets. The
+	         * action must be enabled for the target Interactable and an appropriate number
+	         * of pointers must be held down – 1 for drag/resize, 2 for gesture.
+	         *
+	         * Use it with `interactable.<action>able({ manualStart: false })` to always
+	         * [start actions manually](https://github.com/taye/interact.js/issues/114)
+	         *
+	         - action       (object)  The action to be performed - drag, resize, etc.
+	         - interactable (Interactable) The Interactable to target
+	         - element      (Element) The DOM Element to target
+	         = (object) interact
+	         **
+	         | interact(target)
+	         |   .draggable({
+	         |     // disable the default drag start by down->move
+	         |     manualStart: true
+	         |   })
+	         |   // start dragging after the user holds the pointer down
+	         |   .on('hold', function (event) {
+	         |     var interaction = event.interaction;
+	         |
+	         |     if (!interaction.interacting()) {
+	         |       interaction.start({ name: 'drag' },
+	         |                         event.interactable,
+	         |                         event.currentTarget);
+	         |     }
+	         | });
+	        \*/
+	        start: function (action, interactable, element) {
+	            if (this.interacting()
+	                || !this.pointerIsDown
+	                || this.pointerIds.length < (action.name === 'gesture'? 2 : 1)) {
+	                return;
+	            }
+
+	            // if this interaction had been removed after stopping
+	            // add it back
+	            if (indexOf(interactions, this) === -1) {
+	                interactions.push(this);
+	            }
+
+	            // set the startCoords if there was no prepared action
+	            if (!this.prepared.name) {
+	                this.setEventXY(this.startCoords, this.pointers);
+	            }
+
+	            this.prepared.name  = action.name;
+	            this.prepared.axis  = action.axis;
+	            this.prepared.edges = action.edges;
+	            this.target         = interactable;
+	            this.element        = element;
+
+	            this.setStartOffsets(action.name, interactable, element);
+	            this.setModifications(this.startCoords.page);
+
+	            this.prevEvent = this[this.prepared.name + 'Start'](this.downEvent);
+	        },
+
+	        pointerMove: function (pointer, event, eventTarget, curEventTarget, preEnd) {
+	            if (this.inertiaStatus.active) {
+	                var pageUp   = this.inertiaStatus.upCoords.page;
+	                var clientUp = this.inertiaStatus.upCoords.client;
+
+	                var inertiaPosition = {
+	                    pageX  : pageUp.x   + this.inertiaStatus.sx,
+	                    pageY  : pageUp.y   + this.inertiaStatus.sy,
+	                    clientX: clientUp.x + this.inertiaStatus.sx,
+	                    clientY: clientUp.y + this.inertiaStatus.sy
+	                };
+
+	                this.setEventXY(this.curCoords, [inertiaPosition]);
+	            }
+	            else {
+	                this.recordPointer(pointer);
+	                this.setEventXY(this.curCoords, this.pointers);
+	            }
+
+	            var duplicateMove = (this.curCoords.page.x === this.prevCoords.page.x
+	                                 && this.curCoords.page.y === this.prevCoords.page.y
+	                                 && this.curCoords.client.x === this.prevCoords.client.x
+	                                 && this.curCoords.client.y === this.prevCoords.client.y);
+
+	            var dx, dy,
+	                pointerIndex = this.mouse? 0 : indexOf(this.pointerIds, getPointerId(pointer));
+
+	            // register movement greater than pointerMoveTolerance
+	            if (this.pointerIsDown && !this.pointerWasMoved) {
+	                dx = this.curCoords.client.x - this.startCoords.client.x;
+	                dy = this.curCoords.client.y - this.startCoords.client.y;
+
+	                this.pointerWasMoved = hypot(dx, dy) > pointerMoveTolerance;
+	            }
+
+	            if (!duplicateMove && (!this.pointerIsDown || this.pointerWasMoved)) {
+	                if (this.pointerIsDown) {
+	                    clearTimeout(this.holdTimers[pointerIndex]);
+	                }
+
+	                this.collectEventTargets(pointer, event, eventTarget, 'move');
+	            }
+
+	            if (!this.pointerIsDown) { return; }
+
+	            if (duplicateMove && this.pointerWasMoved && !preEnd) {
+	                this.checkAndPreventDefault(event, this.target, this.element);
+	                return;
+	            }
+
+	            // set pointer coordinate, time changes and speeds
+	            setEventDeltas(this.pointerDelta, this.prevCoords, this.curCoords);
+
+	            if (!this.prepared.name) { return; }
+
+	            if (this.pointerWasMoved
+	                // ignore movement while inertia is active
+	                && (!this.inertiaStatus.active || (pointer instanceof InteractEvent && /inertiastart/.test(pointer.type)))) {
+
+	                // if just starting an action, calculate the pointer speed now
+	                if (!this.interacting()) {
+	                    setEventDeltas(this.pointerDelta, this.prevCoords, this.curCoords);
+
+	                    // check if a drag is in the correct axis
+	                    if (this.prepared.name === 'drag') {
+	                        var absX = Math.abs(dx),
+	                            absY = Math.abs(dy),
+	                            targetAxis = this.target.options.drag.axis,
+	                            axis = (absX > absY ? 'x' : absX < absY ? 'y' : 'xy');
+
+	                        // if the movement isn't in the axis of the interactable
+	                        if (axis !== 'xy' && targetAxis !== 'xy' && targetAxis !== axis) {
+	                            // cancel the prepared action
+	                            this.prepared.name = null;
+
+	                            // then try to get a drag from another ineractable
+
+	                            var element = eventTarget;
+
+	                            // check element interactables
+	                            while (isElement(element)) {
+	                                var elementInteractable = interactables.get(element);
+
+	                                if (elementInteractable
+	                                    && elementInteractable !== this.target
+	                                    && !elementInteractable.options.drag.manualStart
+	                                    && elementInteractable.getAction(this.downPointer, this.downEvent, this, element).name === 'drag'
+	                                    && checkAxis(axis, elementInteractable)) {
+
+	                                    this.prepared.name = 'drag';
+	                                    this.target = elementInteractable;
+	                                    this.element = element;
+	                                    break;
+	                                }
+
+	                                element = parentElement(element);
+	                            }
+
+	                            // if there's no drag from element interactables,
+	                            // check the selector interactables
+	                            if (!this.prepared.name) {
+	                                var thisInteraction = this;
+
+	                                var getDraggable = function (interactable, selector, context) {
+	                                    var elements = ie8MatchesSelector
+	                                        ? context.querySelectorAll(selector)
+	                                        : undefined;
+
+	                                    if (interactable === thisInteraction.target) { return; }
+
+	                                    if (inContext(interactable, eventTarget)
+	                                        && !interactable.options.drag.manualStart
+	                                        && !testIgnore(interactable, element, eventTarget)
+	                                        && testAllow(interactable, element, eventTarget)
+	                                        && matchesSelector(element, selector, elements)
+	                                        && interactable.getAction(thisInteraction.downPointer, thisInteraction.downEvent, thisInteraction, element).name === 'drag'
+	                                        && checkAxis(axis, interactable)
+	                                        && withinInteractionLimit(interactable, element, 'drag')) {
+
+	                                        return interactable;
+	                                    }
+	                                };
+
+	                                element = eventTarget;
+
+	                                while (isElement(element)) {
+	                                    var selectorInteractable = interactables.forEachSelector(getDraggable);
+
+	                                    if (selectorInteractable) {
+	                                        this.prepared.name = 'drag';
+	                                        this.target = selectorInteractable;
+	                                        this.element = element;
+	                                        break;
+	                                    }
+
+	                                    element = parentElement(element);
+	                                }
+	                            }
+	                        }
+	                    }
+	                }
+
+	                var starting = !!this.prepared.name && !this.interacting();
+
+	                if (starting
+	                    && (this.target.options[this.prepared.name].manualStart
+	                        || !withinInteractionLimit(this.target, this.element, this.prepared))) {
+	                    this.stop(event);
+	                    return;
+	                }
+
+	                if (this.prepared.name && this.target) {
+	                    if (starting) {
+	                        this.start(this.prepared, this.target, this.element);
+	                    }
+
+	                    var shouldMove = this.setModifications(this.curCoords.page, preEnd);
+
+	                    // move if snapping or restriction doesn't prevent it
+	                    if (shouldMove || starting) {
+	                        this.prevEvent = this[this.prepared.name + 'Move'](event);
+	                    }
+
+	                    this.checkAndPreventDefault(event, this.target, this.element);
+	                }
+	            }
+
+	            copyCoords(this.prevCoords, this.curCoords);
+
+	            if (this.dragging || this.resizing) {
+	                this.autoScrollMove(pointer);
+	            }
+	        },
+
+	        dragStart: function (event) {
+	            var dragEvent = new InteractEvent(this, event, 'drag', 'start', this.element);
+
+	            this.dragging = true;
+	            this.target.fire(dragEvent);
+
+	            // reset active dropzones
+	            this.activeDrops.dropzones = [];
+	            this.activeDrops.elements  = [];
+	            this.activeDrops.rects     = [];
+
+	            if (!this.dynamicDrop) {
+	                this.setActiveDrops(this.element);
+	            }
+
+	            var dropEvents = this.getDropEvents(event, dragEvent);
+
+	            if (dropEvents.activate) {
+	                this.fireActiveDrops(dropEvents.activate);
+	            }
+
+	            return dragEvent;
+	        },
+
+	        dragMove: function (event) {
+	            var target = this.target,
+	                dragEvent  = new InteractEvent(this, event, 'drag', 'move', this.element),
+	                draggableElement = this.element,
+	                drop = this.getDrop(dragEvent, event, draggableElement);
+
+	            this.dropTarget = drop.dropzone;
+	            this.dropElement = drop.element;
+
+	            var dropEvents = this.getDropEvents(event, dragEvent);
+
+	            target.fire(dragEvent);
+
+	            if (dropEvents.leave) { this.prevDropTarget.fire(dropEvents.leave); }
+	            if (dropEvents.enter) {     this.dropTarget.fire(dropEvents.enter); }
+	            if (dropEvents.move ) {     this.dropTarget.fire(dropEvents.move ); }
+
+	            this.prevDropTarget  = this.dropTarget;
+	            this.prevDropElement = this.dropElement;
+
+	            return dragEvent;
+	        },
+
+	        resizeStart: function (event) {
+	            var resizeEvent = new InteractEvent(this, event, 'resize', 'start', this.element);
+
+	            if (this.prepared.edges) {
+	                var startRect = this.target.getRect(this.element);
+
+	                /*
+	                 * When using the `resizable.square` or `resizable.preserveAspectRatio` options, resizing from one edge
+	                 * will affect another. E.g. with `resizable.square`, resizing to make the right edge larger will make
+	                 * the bottom edge larger by the same amount. We call these 'linked' edges. Any linked edges will depend
+	                 * on the active edges and the edge being interacted with.
+	                 */
+	                if (this.target.options.resize.square || this.target.options.resize.preserveAspectRatio) {
+	                    var linkedEdges = extend({}, this.prepared.edges);
+
+	                    linkedEdges.top    = linkedEdges.top    || (linkedEdges.left   && !linkedEdges.bottom);
+	                    linkedEdges.left   = linkedEdges.left   || (linkedEdges.top    && !linkedEdges.right );
+	                    linkedEdges.bottom = linkedEdges.bottom || (linkedEdges.right  && !linkedEdges.top   );
+	                    linkedEdges.right  = linkedEdges.right  || (linkedEdges.bottom && !linkedEdges.left  );
+
+	                    this.prepared._linkedEdges = linkedEdges;
+	                }
+	                else {
+	                    this.prepared._linkedEdges = null;
+	                }
+
+	                // if using `resizable.preserveAspectRatio` option, record aspect ratio at the start of the resize
+	                if (this.target.options.resize.preserveAspectRatio) {
+	                    this.resizeStartAspectRatio = startRect.width / startRect.height;
+	                }
+
+	                this.resizeRects = {
+	                    start     : startRect,
+	                    current   : extend({}, startRect),
+	                    restricted: extend({}, startRect),
+	                    previous  : extend({}, startRect),
+	                    delta     : {
+	                        left: 0, right : 0, width : 0,
+	                        top : 0, bottom: 0, height: 0
+	                    }
+	                };
+
+	                resizeEvent.rect = this.resizeRects.restricted;
+	                resizeEvent.deltaRect = this.resizeRects.delta;
+	            }
+
+	            this.target.fire(resizeEvent);
+
+	            this.resizing = true;
+
+	            return resizeEvent;
+	        },
+
+	        resizeMove: function (event) {
+	            var resizeEvent = new InteractEvent(this, event, 'resize', 'move', this.element);
+
+	            var edges = this.prepared.edges,
+	                invert = this.target.options.resize.invert,
+	                invertible = invert === 'reposition' || invert === 'negate';
+
+	            if (edges) {
+	                var dx = resizeEvent.dx,
+	                    dy = resizeEvent.dy,
+
+	                    start      = this.resizeRects.start,
+	                    current    = this.resizeRects.current,
+	                    restricted = this.resizeRects.restricted,
+	                    delta      = this.resizeRects.delta,
+	                    previous   = extend(this.resizeRects.previous, restricted),
+
+	                    originalEdges = edges;
+
+	                // `resize.preserveAspectRatio` takes precedence over `resize.square`
+	                if (this.target.options.resize.preserveAspectRatio) {
+	                    var resizeStartAspectRatio = this.resizeStartAspectRatio;
+
+	                    edges = this.prepared._linkedEdges;
+
+	                    if ((originalEdges.left && originalEdges.bottom)
+	                        || (originalEdges.right && originalEdges.top)) {
+	                        dy = -dx / resizeStartAspectRatio;
+	                    }
+	                    else if (originalEdges.left || originalEdges.right) { dy = dx / resizeStartAspectRatio; }
+	                    else if (originalEdges.top || originalEdges.bottom) { dx = dy * resizeStartAspectRatio; }
+	                }
+	                else if (this.target.options.resize.square) {
+	                    edges = this.prepared._linkedEdges;
+
+	                    if ((originalEdges.left && originalEdges.bottom)
+	                        || (originalEdges.right && originalEdges.top)) {
+	                        dy = -dx;
+	                    }
+	                    else if (originalEdges.left || originalEdges.right) { dy = dx; }
+	                    else if (originalEdges.top || originalEdges.bottom) { dx = dy; }
+	                }
+
+	                // update the 'current' rect without modifications
+	                if (edges.top   ) { current.top    += dy; }
+	                if (edges.bottom) { current.bottom += dy; }
+	                if (edges.left  ) { current.left   += dx; }
+	                if (edges.right ) { current.right  += dx; }
+
+	                if (invertible) {
+	                    // if invertible, copy the current rect
+	                    extend(restricted, current);
+
+	                    if (invert === 'reposition') {
+	                        // swap edge values if necessary to keep width/height positive
+	                        var swap;
+
+	                        if (restricted.top > restricted.bottom) {
+	                            swap = restricted.top;
+
+	                            restricted.top = restricted.bottom;
+	                            restricted.bottom = swap;
+	                        }
+	                        if (restricted.left > restricted.right) {
+	                            swap = restricted.left;
+
+	                            restricted.left = restricted.right;
+	                            restricted.right = swap;
+	                        }
+	                    }
+	                }
+	                else {
+	                    // if not invertible, restrict to minimum of 0x0 rect
+	                    restricted.top    = Math.min(current.top, start.bottom);
+	                    restricted.bottom = Math.max(current.bottom, start.top);
+	                    restricted.left   = Math.min(current.left, start.right);
+	                    restricted.right  = Math.max(current.right, start.left);
+	                }
+
+	                restricted.width  = restricted.right  - restricted.left;
+	                restricted.height = restricted.bottom - restricted.top ;
+
+	                for (var edge in restricted) {
+	                    delta[edge] = restricted[edge] - previous[edge];
+	                }
+
+	                resizeEvent.edges = this.prepared.edges;
+	                resizeEvent.rect = restricted;
+	                resizeEvent.deltaRect = delta;
+	            }
+
+	            this.target.fire(resizeEvent);
+
+	            return resizeEvent;
+	        },
+
+	        gestureStart: function (event) {
+	            var gestureEvent = new InteractEvent(this, event, 'gesture', 'start', this.element);
+
+	            gestureEvent.ds = 0;
+
+	            this.gesture.startDistance = this.gesture.prevDistance = gestureEvent.distance;
+	            this.gesture.startAngle = this.gesture.prevAngle = gestureEvent.angle;
+	            this.gesture.scale = 1;
+
+	            this.gesturing = true;
+
+	            this.target.fire(gestureEvent);
+
+	            return gestureEvent;
+	        },
+
+	        gestureMove: function (event) {
+	            if (!this.pointerIds.length) {
+	                return this.prevEvent;
+	            }
+
+	            var gestureEvent;
+
+	            gestureEvent = new InteractEvent(this, event, 'gesture', 'move', this.element);
+	            gestureEvent.ds = gestureEvent.scale - this.gesture.scale;
+
+	            this.target.fire(gestureEvent);
+
+	            this.gesture.prevAngle = gestureEvent.angle;
+	            this.gesture.prevDistance = gestureEvent.distance;
+
+	            if (gestureEvent.scale !== Infinity &&
+	                gestureEvent.scale !== null &&
+	                gestureEvent.scale !== undefined  &&
+	                !isNaN(gestureEvent.scale)) {
+
+	                this.gesture.scale = gestureEvent.scale;
+	            }
+
+	            return gestureEvent;
+	        },
+
+	        pointerHold: function (pointer, event, eventTarget) {
+	            this.collectEventTargets(pointer, event, eventTarget, 'hold');
+	        },
+
+	        pointerUp: function (pointer, event, eventTarget, curEventTarget) {
+	            var pointerIndex = this.mouse? 0 : indexOf(this.pointerIds, getPointerId(pointer));
+
+	            clearTimeout(this.holdTimers[pointerIndex]);
+
+	            this.collectEventTargets(pointer, event, eventTarget, 'up' );
+	            this.collectEventTargets(pointer, event, eventTarget, 'tap');
+
+	            this.pointerEnd(pointer, event, eventTarget, curEventTarget);
+
+	            this.removePointer(pointer);
+	        },
+
+	        pointerCancel: function (pointer, event, eventTarget, curEventTarget) {
+	            var pointerIndex = this.mouse? 0 : indexOf(this.pointerIds, getPointerId(pointer));
+
+	            clearTimeout(this.holdTimers[pointerIndex]);
+
+	            this.collectEventTargets(pointer, event, eventTarget, 'cancel');
+	            this.pointerEnd(pointer, event, eventTarget, curEventTarget);
+
+	            this.removePointer(pointer);
+	        },
+
+	        // http://www.quirksmode.org/dom/events/click.html
+	        // >Events leading to dblclick
+	        //
+	        // IE8 doesn't fire down event before dblclick.
+	        // This workaround tries to fire a tap and doubletap after dblclick
+	        ie8Dblclick: function (pointer, event, eventTarget) {
+	            if (this.prevTap
+	                && event.clientX === this.prevTap.clientX
+	                && event.clientY === this.prevTap.clientY
+	                && eventTarget   === this.prevTap.target) {
+
+	                this.downTargets[0] = eventTarget;
+	                this.downTimes[0] = new Date().getTime();
+	                this.collectEventTargets(pointer, event, eventTarget, 'tap');
+	            }
+	        },
+
+	        // End interact move events and stop auto-scroll unless inertia is enabled
+	        pointerEnd: function (pointer, event, eventTarget, curEventTarget) {
+	            var endEvent,
+	                target = this.target,
+	                options = target && target.options,
+	                inertiaOptions = options && this.prepared.name && options[this.prepared.name].inertia,
+	                inertiaStatus = this.inertiaStatus;
+
+	            if (this.interacting()) {
+
+	                if (inertiaStatus.active && !inertiaStatus.ending) { return; }
+
+	                var pointerSpeed,
+	                    now = new Date().getTime(),
+	                    inertiaPossible = false,
+	                    inertia = false,
+	                    smoothEnd = false,
+	                    endSnap = checkSnap(target, this.prepared.name) && options[this.prepared.name].snap.endOnly,
+	                    endRestrict = checkRestrict(target, this.prepared.name) && options[this.prepared.name].restrict.endOnly,
+	                    dx = 0,
+	                    dy = 0,
+	                    startEvent;
+
+	                if (this.dragging) {
+	                    if      (options.drag.axis === 'x' ) { pointerSpeed = Math.abs(this.pointerDelta.client.vx); }
+	                    else if (options.drag.axis === 'y' ) { pointerSpeed = Math.abs(this.pointerDelta.client.vy); }
+	                    else   /*options.drag.axis === 'xy'*/{ pointerSpeed = this.pointerDelta.client.speed; }
+	                }
+	                else {
+	                    pointerSpeed = this.pointerDelta.client.speed;
+	                }
+
+	                // check if inertia should be started
+	                inertiaPossible = (inertiaOptions && inertiaOptions.enabled
+	                                   && this.prepared.name !== 'gesture'
+	                                   && event !== inertiaStatus.startEvent);
+
+	                inertia = (inertiaPossible
+	                           && (now - this.curCoords.timeStamp) < 50
+	                           && pointerSpeed > inertiaOptions.minSpeed
+	                           && pointerSpeed > inertiaOptions.endSpeed);
+
+	                if (inertiaPossible && !inertia && (endSnap || endRestrict)) {
+
+	                    var snapRestrict = {};
+
+	                    snapRestrict.snap = snapRestrict.restrict = snapRestrict;
+
+	                    if (endSnap) {
+	                        this.setSnapping(this.curCoords.page, snapRestrict);
+	                        if (snapRestrict.locked) {
+	                            dx += snapRestrict.dx;
+	                            dy += snapRestrict.dy;
+	                        }
+	                    }
+
+	                    if (endRestrict) {
+	                        this.setRestriction(this.curCoords.page, snapRestrict);
+	                        if (snapRestrict.restricted) {
+	                            dx += snapRestrict.dx;
+	                            dy += snapRestrict.dy;
+	                        }
+	                    }
+
+	                    if (dx || dy) {
+	                        smoothEnd = true;
+	                    }
+	                }
+
+	                if (inertia || smoothEnd) {
+	                    copyCoords(inertiaStatus.upCoords, this.curCoords);
+
+	                    this.pointers[0] = inertiaStatus.startEvent = startEvent =
+	                        new InteractEvent(this, event, this.prepared.name, 'inertiastart', this.element);
+
+	                    inertiaStatus.t0 = now;
+
+	                    target.fire(inertiaStatus.startEvent);
+
+	                    if (inertia) {
+	                        inertiaStatus.vx0 = this.pointerDelta.client.vx;
+	                        inertiaStatus.vy0 = this.pointerDelta.client.vy;
+	                        inertiaStatus.v0 = pointerSpeed;
+
+	                        this.calcInertia(inertiaStatus);
+
+	                        var page = extend({}, this.curCoords.page),
+	                            origin = getOriginXY(target, this.element),
+	                            statusObject;
+
+	                        page.x = page.x + inertiaStatus.xe - origin.x;
+	                        page.y = page.y + inertiaStatus.ye - origin.y;
+
+	                        statusObject = {
+	                            useStatusXY: true,
+	                            x: page.x,
+	                            y: page.y,
+	                            dx: 0,
+	                            dy: 0,
+	                            snap: null
+	                        };
+
+	                        statusObject.snap = statusObject;
+
+	                        dx = dy = 0;
+
+	                        if (endSnap) {
+	                            var snap = this.setSnapping(this.curCoords.page, statusObject);
+
+	                            if (snap.locked) {
+	                                dx += snap.dx;
+	                                dy += snap.dy;
+	                            }
+	                        }
+
+	                        if (endRestrict) {
+	                            var restrict = this.setRestriction(this.curCoords.page, statusObject);
+
+	                            if (restrict.restricted) {
+	                                dx += restrict.dx;
+	                                dy += restrict.dy;
+	                            }
+	                        }
+
+	                        inertiaStatus.modifiedXe += dx;
+	                        inertiaStatus.modifiedYe += dy;
+
+	                        inertiaStatus.i = reqFrame(this.boundInertiaFrame);
+	                    }
+	                    else {
+	                        inertiaStatus.smoothEnd = true;
+	                        inertiaStatus.xe = dx;
+	                        inertiaStatus.ye = dy;
+
+	                        inertiaStatus.sx = inertiaStatus.sy = 0;
+
+	                        inertiaStatus.i = reqFrame(this.boundSmoothEndFrame);
+	                    }
+
+	                    inertiaStatus.active = true;
+	                    return;
+	                }
+
+	                if (endSnap || endRestrict) {
+	                    // fire a move event at the snapped coordinates
+	                    this.pointerMove(pointer, event, eventTarget, curEventTarget, true);
+	                }
+	            }
+
+	            if (this.dragging) {
+	                endEvent = new InteractEvent(this, event, 'drag', 'end', this.element);
+
+	                var draggableElement = this.element,
+	                    drop = this.getDrop(endEvent, event, draggableElement);
+
+	                this.dropTarget = drop.dropzone;
+	                this.dropElement = drop.element;
+
+	                var dropEvents = this.getDropEvents(event, endEvent);
+
+	                if (dropEvents.leave) { this.prevDropTarget.fire(dropEvents.leave); }
+	                if (dropEvents.enter) {     this.dropTarget.fire(dropEvents.enter); }
+	                if (dropEvents.drop ) {     this.dropTarget.fire(dropEvents.drop ); }
+	                if (dropEvents.deactivate) {
+	                    this.fireActiveDrops(dropEvents.deactivate);
+	                }
+
+	                target.fire(endEvent);
+	            }
+	            else if (this.resizing) {
+	                endEvent = new InteractEvent(this, event, 'resize', 'end', this.element);
+	                target.fire(endEvent);
+	            }
+	            else if (this.gesturing) {
+	                endEvent = new InteractEvent(this, event, 'gesture', 'end', this.element);
+	                target.fire(endEvent);
+	            }
+
+	            this.stop(event);
+	        },
+
+	        collectDrops: function (element) {
+	            var drops = [],
+	                elements = [],
+	                i;
+
+	            element = element || this.element;
+
+	            // collect all dropzones and their elements which qualify for a drop
+	            for (i = 0; i < interactables.length; i++) {
+	                if (!interactables[i].options.drop.enabled) { continue; }
+
+	                var current = interactables[i],
+	                    accept = current.options.drop.accept;
+
+	                // test the draggable element against the dropzone's accept setting
+	                if ((isElement(accept) && accept !== element)
+	                    || (isString(accept)
+	                        && !matchesSelector(element, accept))) {
+
+	                    continue;
+	                }
+
+	                // query for new elements if necessary
+	                var dropElements = current.selector? current._context.querySelectorAll(current.selector) : [current._element];
+
+	                for (var j = 0, len = dropElements.length; j < len; j++) {
+	                    var currentElement = dropElements[j];
+
+	                    if (currentElement === element) {
+	                        continue;
+	                    }
+
+	                    drops.push(current);
+	                    elements.push(currentElement);
+	                }
+	            }
+
+	            return {
+	                dropzones: drops,
+	                elements: elements
+	            };
+	        },
+
+	        fireActiveDrops: function (event) {
+	            var i,
+	                current,
+	                currentElement,
+	                prevElement;
+
+	            // loop through all active dropzones and trigger event
+	            for (i = 0; i < this.activeDrops.dropzones.length; i++) {
+	                current = this.activeDrops.dropzones[i];
+	                currentElement = this.activeDrops.elements [i];
+
+	                // prevent trigger of duplicate events on same element
+	                if (currentElement !== prevElement) {
+	                    // set current element as event target
+	                    event.target = currentElement;
+	                    current.fire(event);
+	                }
+	                prevElement = currentElement;
+	            }
+	        },
+
+	        // Collect a new set of possible drops and save them in activeDrops.
+	        // setActiveDrops should always be called when a drag has just started or a
+	        // drag event happens while dynamicDrop is true
+	        setActiveDrops: function (dragElement) {
+	            // get dropzones and their elements that could receive the draggable
+	            var possibleDrops = this.collectDrops(dragElement, true);
+
+	            this.activeDrops.dropzones = possibleDrops.dropzones;
+	            this.activeDrops.elements  = possibleDrops.elements;
+	            this.activeDrops.rects     = [];
+
+	            for (var i = 0; i < this.activeDrops.dropzones.length; i++) {
+	                this.activeDrops.rects[i] = this.activeDrops.dropzones[i].getRect(this.activeDrops.elements[i]);
+	            }
+	        },
+
+	        getDrop: function (dragEvent, event, dragElement) {
+	            var validDrops = [];
+
+	            if (dynamicDrop) {
+	                this.setActiveDrops(dragElement);
+	            }
+
+	            // collect all dropzones and their elements which qualify for a drop
+	            for (var j = 0; j < this.activeDrops.dropzones.length; j++) {
+	                var current        = this.activeDrops.dropzones[j],
+	                    currentElement = this.activeDrops.elements [j],
+	                    rect           = this.activeDrops.rects    [j];
+
+	                validDrops.push(current.dropCheck(dragEvent, event, this.target, dragElement, currentElement, rect)
+	                                ? currentElement
+	                                : null);
+	            }
+
+	            // get the most appropriate dropzone based on DOM depth and order
+	            var dropIndex = indexOfDeepestElement(validDrops),
+	                dropzone  = this.activeDrops.dropzones[dropIndex] || null,
+	                element   = this.activeDrops.elements [dropIndex] || null;
+
+	            return {
+	                dropzone: dropzone,
+	                element: element
+	            };
+	        },
+
+	        getDropEvents: function (pointerEvent, dragEvent) {
+	            var dropEvents = {
+	                enter     : null,
+	                leave     : null,
+	                activate  : null,
+	                deactivate: null,
+	                move      : null,
+	                drop      : null
+	            };
+
+	            if (this.dropElement !== this.prevDropElement) {
+	                // if there was a prevDropTarget, create a dragleave event
+	                if (this.prevDropTarget) {
+	                    dropEvents.leave = {
+	                        target       : this.prevDropElement,
+	                        dropzone     : this.prevDropTarget,
+	                        relatedTarget: dragEvent.target,
+	                        draggable    : dragEvent.interactable,
+	                        dragEvent    : dragEvent,
+	                        interaction  : this,
+	                        timeStamp    : dragEvent.timeStamp,
+	                        type         : 'dragleave'
+	                    };
+
+	                    dragEvent.dragLeave = this.prevDropElement;
+	                    dragEvent.prevDropzone = this.prevDropTarget;
+	                }
+	                // if the dropTarget is not null, create a dragenter event
+	                if (this.dropTarget) {
+	                    dropEvents.enter = {
+	                        target       : this.dropElement,
+	                        dropzone     : this.dropTarget,
+	                        relatedTarget: dragEvent.target,
+	                        draggable    : dragEvent.interactable,
+	                        dragEvent    : dragEvent,
+	                        interaction  : this,
+	                        timeStamp    : dragEvent.timeStamp,
+	                        type         : 'dragenter'
+	                    };
+
+	                    dragEvent.dragEnter = this.dropElement;
+	                    dragEvent.dropzone = this.dropTarget;
+	                }
+	            }
+
+	            if (dragEvent.type === 'dragend' && this.dropTarget) {
+	                dropEvents.drop = {
+	                    target       : this.dropElement,
+	                    dropzone     : this.dropTarget,
+	                    relatedTarget: dragEvent.target,
+	                    draggable    : dragEvent.interactable,
+	                    dragEvent    : dragEvent,
+	                    interaction  : this,
+	                    timeStamp    : dragEvent.timeStamp,
+	                    type         : 'drop'
+	                };
+
+	                dragEvent.dropzone = this.dropTarget;
+	            }
+	            if (dragEvent.type === 'dragstart') {
+	                dropEvents.activate = {
+	                    target       : null,
+	                    dropzone     : null,
+	                    relatedTarget: dragEvent.target,
+	                    draggable    : dragEvent.interactable,
+	                    dragEvent    : dragEvent,
+	                    interaction  : this,
+	                    timeStamp    : dragEvent.timeStamp,
+	                    type         : 'dropactivate'
+	                };
+	            }
+	            if (dragEvent.type === 'dragend') {
+	                dropEvents.deactivate = {
+	                    target       : null,
+	                    dropzone     : null,
+	                    relatedTarget: dragEvent.target,
+	                    draggable    : dragEvent.interactable,
+	                    dragEvent    : dragEvent,
+	                    interaction  : this,
+	                    timeStamp    : dragEvent.timeStamp,
+	                    type         : 'dropdeactivate'
+	                };
+	            }
+	            if (dragEvent.type === 'dragmove' && this.dropTarget) {
+	                dropEvents.move = {
+	                    target       : this.dropElement,
+	                    dropzone     : this.dropTarget,
+	                    relatedTarget: dragEvent.target,
+	                    draggable    : dragEvent.interactable,
+	                    dragEvent    : dragEvent,
+	                    interaction  : this,
+	                    dragmove     : dragEvent,
+	                    timeStamp    : dragEvent.timeStamp,
+	                    type         : 'dropmove'
+	                };
+	                dragEvent.dropzone = this.dropTarget;
+	            }
+
+	            return dropEvents;
+	        },
+
+	        currentAction: function () {
+	            return (this.dragging && 'drag') || (this.resizing && 'resize') || (this.gesturing && 'gesture') || null;
+	        },
+
+	        interacting: function () {
+	            return this.dragging || this.resizing || this.gesturing;
+	        },
+
+	        clearTargets: function () {
+	            this.target = this.element = null;
+
+	            this.dropTarget = this.dropElement = this.prevDropTarget = this.prevDropElement = null;
+	        },
+
+	        stop: function (event) {
+	            if (this.interacting()) {
+	                autoScroll.stop();
+	                this.matches = [];
+	                this.matchElements = [];
+
+	                var target = this.target;
+
+	                if (target.options.styleCursor) {
+	                    target._doc.documentElement.style.cursor = '';
+	                }
+
+	                // prevent Default only if were previously interacting
+	                if (event && isFunction(event.preventDefault)) {
+	                    this.checkAndPreventDefault(event, target, this.element);
+	                }
+
+	                if (this.dragging) {
+	                    this.activeDrops.dropzones = this.activeDrops.elements = this.activeDrops.rects = null;
+	                }
+	            }
+
+	            this.clearTargets();
+
+	            this.pointerIsDown = this.snapStatus.locked = this.dragging = this.resizing = this.gesturing = false;
+	            this.prepared.name = this.prevEvent = null;
+	            this.inertiaStatus.resumeDx = this.inertiaStatus.resumeDy = 0;
+
+	            // remove pointers if their ID isn't in this.pointerIds
+	            for (var i = 0; i < this.pointers.length; i++) {
+	                if (indexOf(this.pointerIds, getPointerId(this.pointers[i])) === -1) {
+	                    this.pointers.splice(i, 1);
+	                }
+	            }
+	        },
+
+	        inertiaFrame: function () {
+	            var inertiaStatus = this.inertiaStatus,
+	                options = this.target.options[this.prepared.name].inertia,
+	                lambda = options.resistance,
+	                t = new Date().getTime() / 1000 - inertiaStatus.t0;
+
+	            if (t < inertiaStatus.te) {
+
+	                var progress =  1 - (Math.exp(-lambda * t) - inertiaStatus.lambda_v0) / inertiaStatus.one_ve_v0;
+
+	                if (inertiaStatus.modifiedXe === inertiaStatus.xe && inertiaStatus.modifiedYe === inertiaStatus.ye) {
+	                    inertiaStatus.sx = inertiaStatus.xe * progress;
+	                    inertiaStatus.sy = inertiaStatus.ye * progress;
+	                }
+	                else {
+	                    var quadPoint = getQuadraticCurvePoint(
+	                            0, 0,
+	                            inertiaStatus.xe, inertiaStatus.ye,
+	                            inertiaStatus.modifiedXe, inertiaStatus.modifiedYe,
+	                            progress);
+
+	                    inertiaStatus.sx = quadPoint.x;
+	                    inertiaStatus.sy = quadPoint.y;
+	                }
+
+	                this.pointerMove(inertiaStatus.startEvent, inertiaStatus.startEvent);
+
+	                inertiaStatus.i = reqFrame(this.boundInertiaFrame);
+	            }
+	            else {
+	                inertiaStatus.ending = true;
+
+	                inertiaStatus.sx = inertiaStatus.modifiedXe;
+	                inertiaStatus.sy = inertiaStatus.modifiedYe;
+
+	                this.pointerMove(inertiaStatus.startEvent, inertiaStatus.startEvent);
+	                this.pointerEnd(inertiaStatus.startEvent, inertiaStatus.startEvent);
+
+	                inertiaStatus.active = inertiaStatus.ending = false;
+	            }
+	        },
+
+	        smoothEndFrame: function () {
+	            var inertiaStatus = this.inertiaStatus,
+	                t = new Date().getTime() - inertiaStatus.t0,
+	                duration = this.target.options[this.prepared.name].inertia.smoothEndDuration;
+
+	            if (t < duration) {
+	                inertiaStatus.sx = easeOutQuad(t, 0, inertiaStatus.xe, duration);
+	                inertiaStatus.sy = easeOutQuad(t, 0, inertiaStatus.ye, duration);
+
+	                this.pointerMove(inertiaStatus.startEvent, inertiaStatus.startEvent);
+
+	                inertiaStatus.i = reqFrame(this.boundSmoothEndFrame);
+	            }
+	            else {
+	                inertiaStatus.ending = true;
+
+	                inertiaStatus.sx = inertiaStatus.xe;
+	                inertiaStatus.sy = inertiaStatus.ye;
+
+	                this.pointerMove(inertiaStatus.startEvent, inertiaStatus.startEvent);
+	                this.pointerEnd(inertiaStatus.startEvent, inertiaStatus.startEvent);
+
+	                inertiaStatus.smoothEnd =
+	                  inertiaStatus.active = inertiaStatus.ending = false;
+	            }
+	        },
+
+	        addPointer: function (pointer) {
+	            var id = getPointerId(pointer),
+	                index = this.mouse? 0 : indexOf(this.pointerIds, id);
+
+	            if (index === -1) {
+	                index = this.pointerIds.length;
+	            }
+
+	            this.pointerIds[index] = id;
+	            this.pointers[index] = pointer;
+
+	            return index;
+	        },
+
+	        removePointer: function (pointer) {
+	            var id = getPointerId(pointer),
+	                index = this.mouse? 0 : indexOf(this.pointerIds, id);
+
+	            if (index === -1) { return; }
+
+	            this.pointers   .splice(index, 1);
+	            this.pointerIds .splice(index, 1);
+	            this.downTargets.splice(index, 1);
+	            this.downTimes  .splice(index, 1);
+	            this.holdTimers .splice(index, 1);
+	        },
+
+	        recordPointer: function (pointer) {
+	            var index = this.mouse? 0: indexOf(this.pointerIds, getPointerId(pointer));
+
+	            if (index === -1) { return; }
+
+	            this.pointers[index] = pointer;
+	        },
+
+	        collectEventTargets: function (pointer, event, eventTarget, eventType) {
+	            var pointerIndex = this.mouse? 0 : indexOf(this.pointerIds, getPointerId(pointer));
+
+	            // do not fire a tap event if the pointer was moved before being lifted
+	            if (eventType === 'tap' && (this.pointerWasMoved
+	                // or if the pointerup target is different to the pointerdown target
+	                || !(this.downTargets[pointerIndex] && this.downTargets[pointerIndex] === eventTarget))) {
+	                return;
+	            }
+
+	            var targets = [],
+	                elements = [],
+	                element = eventTarget;
+
+	            function collectSelectors (interactable, selector, context) {
+	                var els = ie8MatchesSelector
+	                        ? context.querySelectorAll(selector)
+	                        : undefined;
+
+	                if (interactable._iEvents[eventType]
+	                    && isElement(element)
+	                    && inContext(interactable, element)
+	                    && !testIgnore(interactable, element, eventTarget)
+	                    && testAllow(interactable, element, eventTarget)
+	                    && matchesSelector(element, selector, els)) {
+
+	                    targets.push(interactable);
+	                    elements.push(element);
+	                }
+	            }
+
+	            while (element) {
+	                if (interact.isSet(element) && interact(element)._iEvents[eventType]) {
+	                    targets.push(interact(element));
+	                    elements.push(element);
+	                }
+
+	                interactables.forEachSelector(collectSelectors);
+
+	                element = parentElement(element);
+	            }
+
+	            // create the tap event even if there are no listeners so that
+	            // doubletap can still be created and fired
+	            if (targets.length || eventType === 'tap') {
+	                this.firePointers(pointer, event, eventTarget, targets, elements, eventType);
+	            }
+	        },
+
+	        firePointers: function (pointer, event, eventTarget, targets, elements, eventType) {
+	            var pointerIndex = this.mouse? 0 : indexOf(this.pointerIds, getPointerId(pointer)),
+	                pointerEvent = {},
+	                i,
+	                // for tap events
+	                interval, createNewDoubleTap;
+
+	            // if it's a doubletap then the event properties would have been
+	            // copied from the tap event and provided as the pointer argument
+	            if (eventType === 'doubletap') {
+	                pointerEvent = pointer;
+	            }
+	            else {
+	                pointerExtend(pointerEvent, event);
+	                if (event !== pointer) {
+	                    pointerExtend(pointerEvent, pointer);
+	                }
+
+	                pointerEvent.preventDefault           = preventOriginalDefault;
+	                pointerEvent.stopPropagation          = InteractEvent.prototype.stopPropagation;
+	                pointerEvent.stopImmediatePropagation = InteractEvent.prototype.stopImmediatePropagation;
+	                pointerEvent.interaction              = this;
+
+	                pointerEvent.timeStamp       = new Date().getTime();
+	                pointerEvent.originalEvent   = event;
+	                pointerEvent.originalPointer = pointer;
+	                pointerEvent.type            = eventType;
+	                pointerEvent.pointerId       = getPointerId(pointer);
+	                pointerEvent.pointerType     = this.mouse? 'mouse' : !supportsPointerEvent? 'touch'
+	                                                    : isString(pointer.pointerType)
+	                                                        ? pointer.pointerType
+	                                                        : [,,'touch', 'pen', 'mouse'][pointer.pointerType];
+	            }
+
+	            if (eventType === 'tap') {
+	                pointerEvent.dt = pointerEvent.timeStamp - this.downTimes[pointerIndex];
+
+	                interval = pointerEvent.timeStamp - this.tapTime;
+	                createNewDoubleTap = !!(this.prevTap && this.prevTap.type !== 'doubletap'
+	                       && this.prevTap.target === pointerEvent.target
+	                       && interval < 500);
+
+	                pointerEvent.double = createNewDoubleTap;
+
+	                this.tapTime = pointerEvent.timeStamp;
+	            }
+
+	            for (i = 0; i < targets.length; i++) {
+	                pointerEvent.currentTarget = elements[i];
+	                pointerEvent.interactable = targets[i];
+	                targets[i].fire(pointerEvent);
+
+	                if (pointerEvent.immediatePropagationStopped
+	                    ||(pointerEvent.propagationStopped && elements[i + 1] !== pointerEvent.currentTarget)) {
+	                    break;
+	                }
+	            }
+
+	            if (createNewDoubleTap) {
+	                var doubleTap = {};
+
+	                extend(doubleTap, pointerEvent);
+
+	                doubleTap.dt   = interval;
+	                doubleTap.type = 'doubletap';
+
+	                this.collectEventTargets(doubleTap, event, eventTarget, 'doubletap');
+
+	                this.prevTap = doubleTap;
+	            }
+	            else if (eventType === 'tap') {
+	                this.prevTap = pointerEvent;
+	            }
+	        },
+
+	        validateSelector: function (pointer, event, matches, matchElements) {
+	            for (var i = 0, len = matches.length; i < len; i++) {
+	                var match = matches[i],
+	                    matchElement = matchElements[i],
+	                    action = validateAction(match.getAction(pointer, event, this, matchElement), match);
+
+	                if (action && withinInteractionLimit(match, matchElement, action)) {
+	                    this.target = match;
+	                    this.element = matchElement;
+
+	                    return action;
+	                }
+	            }
+	        },
+
+	        setSnapping: function (pageCoords, status) {
+	            var snap = this.target.options[this.prepared.name].snap,
+	                targets = [],
+	                target,
+	                page,
+	                i;
+
+	            status = status || this.snapStatus;
+
+	            if (status.useStatusXY) {
+	                page = { x: status.x, y: status.y };
+	            }
+	            else {
+	                var origin = getOriginXY(this.target, this.element);
+
+	                page = extend({}, pageCoords);
+
+	                page.x -= origin.x;
+	                page.y -= origin.y;
+	            }
+
+	            status.realX = page.x;
+	            status.realY = page.y;
+
+	            page.x = page.x - this.inertiaStatus.resumeDx;
+	            page.y = page.y - this.inertiaStatus.resumeDy;
+
+	            var len = snap.targets? snap.targets.length : 0;
+
+	            for (var relIndex = 0; relIndex < this.snapOffsets.length; relIndex++) {
+	                var relative = {
+	                    x: page.x - this.snapOffsets[relIndex].x,
+	                    y: page.y - this.snapOffsets[relIndex].y
+	                };
+
+	                for (i = 0; i < len; i++) {
+	                    if (isFunction(snap.targets[i])) {
+	                        target = snap.targets[i](relative.x, relative.y, this);
+	                    }
+	                    else {
+	                        target = snap.targets[i];
+	                    }
+
+	                    if (!target) { continue; }
+
+	                    targets.push({
+	                        x: isNumber(target.x) ? (target.x + this.snapOffsets[relIndex].x) : relative.x,
+	                        y: isNumber(target.y) ? (target.y + this.snapOffsets[relIndex].y) : relative.y,
+
+	                        range: isNumber(target.range)? target.range: snap.range
+	                    });
+	                }
+	            }
+
+	            var closest = {
+	                    target: null,
+	                    inRange: false,
+	                    distance: 0,
+	                    range: 0,
+	                    dx: 0,
+	                    dy: 0
+	                };
+
+	            for (i = 0, len = targets.length; i < len; i++) {
+	                target = targets[i];
+
+	                var range = target.range,
+	                    dx = target.x - page.x,
+	                    dy = target.y - page.y,
+	                    distance = hypot(dx, dy),
+	                    inRange = distance <= range;
+
+	                // Infinite targets count as being out of range
+	                // compared to non infinite ones that are in range
+	                if (range === Infinity && closest.inRange && closest.range !== Infinity) {
+	                    inRange = false;
+	                }
+
+	                if (!closest.target || (inRange
+	                    // is the closest target in range?
+	                    ? (closest.inRange && range !== Infinity
+	                        // the pointer is relatively deeper in this target
+	                        ? distance / range < closest.distance / closest.range
+	                        // this target has Infinite range and the closest doesn't
+	                        : (range === Infinity && closest.range !== Infinity)
+	                            // OR this target is closer that the previous closest
+	                            || distance < closest.distance)
+	                    // The other is not in range and the pointer is closer to this target
+	                    : (!closest.inRange && distance < closest.distance))) {
+
+	                    if (range === Infinity) {
+	                        inRange = true;
+	                    }
+
+	                    closest.target = target;
+	                    closest.distance = distance;
+	                    closest.range = range;
+	                    closest.inRange = inRange;
+	                    closest.dx = dx;
+	                    closest.dy = dy;
+
+	                    status.range = range;
+	                }
+	            }
+
+	            var snapChanged;
+
+	            if (closest.target) {
+	                snapChanged = (status.snappedX !== closest.target.x || status.snappedY !== closest.target.y);
+
+	                status.snappedX = closest.target.x;
+	                status.snappedY = closest.target.y;
+	            }
+	            else {
+	                snapChanged = true;
+
+	                status.snappedX = NaN;
+	                status.snappedY = NaN;
+	            }
+
+	            status.dx = closest.dx;
+	            status.dy = closest.dy;
+
+	            status.changed = (snapChanged || (closest.inRange && !status.locked));
+	            status.locked = closest.inRange;
+
+	            return status;
+	        },
+
+	        setRestriction: function (pageCoords, status) {
+	            var target = this.target,
+	                restrict = target && target.options[this.prepared.name].restrict,
+	                restriction = restrict && restrict.restriction,
+	                page;
+
+	            if (!restriction) {
+	                return status;
+	            }
+
+	            status = status || this.restrictStatus;
+
+	            page = status.useStatusXY
+	                    ? page = { x: status.x, y: status.y }
+	                    : page = extend({}, pageCoords);
+
+	            if (status.snap && status.snap.locked) {
+	                page.x += status.snap.dx || 0;
+	                page.y += status.snap.dy || 0;
+	            }
+
+	            page.x -= this.inertiaStatus.resumeDx;
+	            page.y -= this.inertiaStatus.resumeDy;
+
+	            status.dx = 0;
+	            status.dy = 0;
+	            status.restricted = false;
+
+	            var rect, restrictedX, restrictedY;
+
+	            if (isString(restriction)) {
+	                if (restriction === 'parent') {
+	                    restriction = parentElement(this.element);
+	                }
+	                else if (restriction === 'self') {
+	                    restriction = target.getRect(this.element);
+	                }
+	                else {
+	                    restriction = closest(this.element, restriction);
+	                }
+
+	                if (!restriction) { return status; }
+	            }
+
+	            if (isFunction(restriction)) {
+	                restriction = restriction(page.x, page.y, this.element);
+	            }
+
+	            if (isElement(restriction)) {
+	                restriction = getElementRect(restriction);
+	            }
+
+	            rect = restriction;
+
+	            if (!restriction) {
+	                restrictedX = page.x;
+	                restrictedY = page.y;
+	            }
+	            // object is assumed to have
+	            // x, y, width, height or
+	            // left, top, right, bottom
+	            else if ('x' in restriction && 'y' in restriction) {
+	                restrictedX = Math.max(Math.min(rect.x + rect.width  - this.restrictOffset.right , page.x), rect.x + this.restrictOffset.left);
+	                restrictedY = Math.max(Math.min(rect.y + rect.height - this.restrictOffset.bottom, page.y), rect.y + this.restrictOffset.top );
+	            }
+	            else {
+	                restrictedX = Math.max(Math.min(rect.right  - this.restrictOffset.right , page.x), rect.left + this.restrictOffset.left);
+	                restrictedY = Math.max(Math.min(rect.bottom - this.restrictOffset.bottom, page.y), rect.top  + this.restrictOffset.top );
+	            }
+
+	            status.dx = restrictedX - page.x;
+	            status.dy = restrictedY - page.y;
+
+	            status.changed = status.restrictedX !== restrictedX || status.restrictedY !== restrictedY;
+	            status.restricted = !!(status.dx || status.dy);
+
+	            status.restrictedX = restrictedX;
+	            status.restrictedY = restrictedY;
+
+	            return status;
+	        },
+
+	        checkAndPreventDefault: function (event, interactable, element) {
+	            if (!(interactable = interactable || this.target)) { return; }
+
+	            var options = interactable.options,
+	                prevent = options.preventDefault;
+
+	            if (prevent === 'auto' && element && !/^(input|select|textarea)$/i.test(event.target.nodeName)) {
+	                // do not preventDefault on pointerdown if the prepared action is a drag
+	                // and dragging can only start from a certain direction - this allows
+	                // a touch to pan the viewport if a drag isn't in the right direction
+	                if (/down|start/i.test(event.type)
+	                    && this.prepared.name === 'drag' && options.drag.axis !== 'xy') {
+
+	                    return;
+	                }
+
+	                // with manualStart, only preventDefault while interacting
+	                if (options[this.prepared.name] && options[this.prepared.name].manualStart
+	                    && !this.interacting()) {
+	                    return;
+	                }
+
+	                event.preventDefault();
+	                return;
+	            }
+
+	            if (prevent === 'always') {
+	                event.preventDefault();
+	                return;
+	            }
+	        },
+
+	        calcInertia: function (status) {
+	            var inertiaOptions = this.target.options[this.prepared.name].inertia,
+	                lambda = inertiaOptions.resistance,
+	                inertiaDur = -Math.log(inertiaOptions.endSpeed / status.v0) / lambda;
+
+	            status.x0 = this.prevEvent.pageX;
+	            status.y0 = this.prevEvent.pageY;
+	            status.t0 = status.startEvent.timeStamp / 1000;
+	            status.sx = status.sy = 0;
+
+	            status.modifiedXe = status.xe = (status.vx0 - inertiaDur) / lambda;
+	            status.modifiedYe = status.ye = (status.vy0 - inertiaDur) / lambda;
+	            status.te = inertiaDur;
+
+	            status.lambda_v0 = lambda / status.v0;
+	            status.one_ve_v0 = 1 - inertiaOptions.endSpeed / status.v0;
+	        },
+
+	        autoScrollMove: function (pointer) {
+	            if (!(this.interacting()
+	                && checkAutoScroll(this.target, this.prepared.name))) {
+	                return;
+	            }
+
+	            if (this.inertiaStatus.active) {
+	                autoScroll.x = autoScroll.y = 0;
+	                return;
+	            }
+
+	            var top,
+	                right,
+	                bottom,
+	                left,
+	                options = this.target.options[this.prepared.name].autoScroll,
+	                container = options.container || getWindow(this.element);
+
+	            if (isWindow(container)) {
+	                left   = pointer.clientX < autoScroll.margin;
+	                top    = pointer.clientY < autoScroll.margin;
+	                right  = pointer.clientX > container.innerWidth  - autoScroll.margin;
+	                bottom = pointer.clientY > container.innerHeight - autoScroll.margin;
+	            }
+	            else {
+	                var rect = getElementClientRect(container);
+
+	                left   = pointer.clientX < rect.left   + autoScroll.margin;
+	                top    = pointer.clientY < rect.top    + autoScroll.margin;
+	                right  = pointer.clientX > rect.right  - autoScroll.margin;
+	                bottom = pointer.clientY > rect.bottom - autoScroll.margin;
+	            }
+
+	            autoScroll.x = (right ? 1: left? -1: 0);
+	            autoScroll.y = (bottom? 1:  top? -1: 0);
+
+	            if (!autoScroll.isScrolling) {
+	                // set the autoScroll properties to those of the target
+	                autoScroll.margin = options.margin;
+	                autoScroll.speed  = options.speed;
+
+	                autoScroll.start(this);
+	            }
+	        },
+
+	        _updateEventTargets: function (target, currentTarget) {
+	            this._eventTarget    = target;
+	            this._curEventTarget = currentTarget;
+	        }
+
+	    };
+
+	    function getInteractionFromPointer (pointer, eventType, eventTarget) {
+	        var i = 0, len = interactions.length,
+	            mouseEvent = (/mouse/i.test(pointer.pointerType || eventType)
+	                          // MSPointerEvent.MSPOINTER_TYPE_MOUSE
+	                          || pointer.pointerType === 4),
+	            interaction;
+
+	        var id = getPointerId(pointer);
+
+	        // try to resume inertia with a new pointer
+	        if (/down|start/i.test(eventType)) {
+	            for (i = 0; i < len; i++) {
+	                interaction = interactions[i];
+
+	                var element = eventTarget;
+
+	                if (interaction.inertiaStatus.active && interaction.target.options[interaction.prepared.name].inertia.allowResume
+	                    && (interaction.mouse === mouseEvent)) {
+	                    while (element) {
+	                        // if the element is the interaction element
+	                        if (element === interaction.element) {
+	                            return interaction;
+	                        }
+	                        element = parentElement(element);
+	                    }
+	                }
+	            }
+	        }
+
+	        // if it's a mouse interaction
+	        if (mouseEvent || !(supportsTouch || supportsPointerEvent)) {
+
+	            // find a mouse interaction that's not in inertia phase
+	            for (i = 0; i < len; i++) {
+	                if (interactions[i].mouse && !interactions[i].inertiaStatus.active) {
+	                    return interactions[i];
+	                }
+	            }
+
+	            // find any interaction specifically for mouse.
+	            // if the eventType is a mousedown, and inertia is active
+	            // ignore the interaction
+	            for (i = 0; i < len; i++) {
+	                if (interactions[i].mouse && !(/down/.test(eventType) && interactions[i].inertiaStatus.active)) {
+	                    return interaction;
+	                }
+	            }
+
+	            // create a new interaction for mouse
+	            interaction = new Interaction();
+	            interaction.mouse = true;
+
+	            return interaction;
+	        }
+
+	        // get interaction that has this pointer
+	        for (i = 0; i < len; i++) {
+	            if (contains(interactions[i].pointerIds, id)) {
+	                return interactions[i];
+	            }
+	        }
+
+	        // at this stage, a pointerUp should not return an interaction
+	        if (/up|end|out/i.test(eventType)) {
+	            return null;
+	        }
+
+	        // get first idle interaction
+	        for (i = 0; i < len; i++) {
+	            interaction = interactions[i];
+
+	            if ((!interaction.prepared.name || (interaction.target.options.gesture.enabled))
+	                && !interaction.interacting()
+	                && !(!mouseEvent && interaction.mouse)) {
+
+	                return interaction;
+	            }
+	        }
+
+	        return new Interaction();
+	    }
+
+	    function doOnInteractions (method) {
+	        return (function (event) {
+	            var interaction,
+	                eventTarget = getActualElement(event.path
+	                                               ? event.path[0]
+	                                               : event.target),
+	                curEventTarget = getActualElement(event.currentTarget),
+	                i;
+
+	            if (supportsTouch && /touch/.test(event.type)) {
+	                prevTouchTime = new Date().getTime();
+
+	                for (i = 0; i < event.changedTouches.length; i++) {
+	                    var pointer = event.changedTouches[i];
+
+	                    interaction = getInteractionFromPointer(pointer, event.type, eventTarget);
+
+	                    if (!interaction) { continue; }
+
+	                    interaction._updateEventTargets(eventTarget, curEventTarget);
+
+	                    interaction[method](pointer, event, eventTarget, curEventTarget);
+	                }
+	            }
+	            else {
+	                if (!supportsPointerEvent && /mouse/.test(event.type)) {
+	                    // ignore mouse events while touch interactions are active
+	                    for (i = 0; i < interactions.length; i++) {
+	                        if (!interactions[i].mouse && interactions[i].pointerIsDown) {
+	                            return;
+	                        }
+	                    }
+
+	                    // try to ignore mouse events that are simulated by the browser
+	                    // after a touch event
+	                    if (new Date().getTime() - prevTouchTime < 500) {
+	                        return;
+	                    }
+	                }
+
+	                interaction = getInteractionFromPointer(event, event.type, eventTarget);
+
+	                if (!interaction) { return; }
+
+	                interaction._updateEventTargets(eventTarget, curEventTarget);
+
+	                interaction[method](event, event, eventTarget, curEventTarget);
+	            }
+	        });
+	    }
+
+	    function InteractEvent (interaction, event, action, phase, element, related) {
+	        var client,
+	            page,
+	            target      = interaction.target,
+	            snapStatus  = interaction.snapStatus,
+	            restrictStatus  = interaction.restrictStatus,
+	            pointers    = interaction.pointers,
+	            deltaSource = (target && target.options || defaultOptions).deltaSource,
+	            sourceX     = deltaSource + 'X',
+	            sourceY     = deltaSource + 'Y',
+	            options     = target? target.options: defaultOptions,
+	            origin      = getOriginXY(target, element),
+	            starting    = phase === 'start',
+	            ending      = phase === 'end',
+	            coords      = starting? interaction.startCoords : interaction.curCoords;
+
+	        element = element || interaction.element;
+
+	        page   = extend({}, coords.page);
+	        client = extend({}, coords.client);
+
+	        page.x -= origin.x;
+	        page.y -= origin.y;
+
+	        client.x -= origin.x;
+	        client.y -= origin.y;
+
+	        var relativePoints = options[action].snap && options[action].snap.relativePoints ;
+
+	        if (checkSnap(target, action) && !(starting && relativePoints && relativePoints.length)) {
+	            this.snap = {
+	                range  : snapStatus.range,
+	                locked : snapStatus.locked,
+	                x      : snapStatus.snappedX,
+	                y      : snapStatus.snappedY,
+	                realX  : snapStatus.realX,
+	                realY  : snapStatus.realY,
+	                dx     : snapStatus.dx,
+	                dy     : snapStatus.dy
+	            };
+
+	            if (snapStatus.locked) {
+	                page.x += snapStatus.dx;
+	                page.y += snapStatus.dy;
+	                client.x += snapStatus.dx;
+	                client.y += snapStatus.dy;
+	            }
+	        }
+
+	        if (checkRestrict(target, action) && !(starting && options[action].restrict.elementRect) && restrictStatus.restricted) {
+	            page.x += restrictStatus.dx;
+	            page.y += restrictStatus.dy;
+	            client.x += restrictStatus.dx;
+	            client.y += restrictStatus.dy;
+
+	            this.restrict = {
+	                dx: restrictStatus.dx,
+	                dy: restrictStatus.dy
+	            };
+	        }
+
+	        this.pageX     = page.x;
+	        this.pageY     = page.y;
+	        this.clientX   = client.x;
+	        this.clientY   = client.y;
+
+	        this.x0        = interaction.startCoords.page.x - origin.x;
+	        this.y0        = interaction.startCoords.page.y - origin.y;
+	        this.clientX0  = interaction.startCoords.client.x - origin.x;
+	        this.clientY0  = interaction.startCoords.client.y - origin.y;
+	        this.ctrlKey   = event.ctrlKey;
+	        this.altKey    = event.altKey;
+	        this.shiftKey  = event.shiftKey;
+	        this.metaKey   = event.metaKey;
+	        this.button    = event.button;
+	        this.buttons   = event.buttons;
+	        this.target    = element;
+	        this.t0        = interaction.downTimes[0];
+	        this.type      = action + (phase || '');
+
+	        this.interaction = interaction;
+	        this.interactable = target;
+
+	        var inertiaStatus = interaction.inertiaStatus;
+
+	        if (inertiaStatus.active) {
+	            this.detail = 'inertia';
+	        }
+
+	        if (related) {
+	            this.relatedTarget = related;
+	        }
+
+	        // end event dx, dy is difference between start and end points
+	        if (ending) {
+	            if (deltaSource === 'client') {
+	                this.dx = client.x - interaction.startCoords.client.x;
+	                this.dy = client.y - interaction.startCoords.client.y;
+	            }
+	            else {
+	                this.dx = page.x - interaction.startCoords.page.x;
+	                this.dy = page.y - interaction.startCoords.page.y;
+	            }
+	        }
+	        else if (starting) {
+	            this.dx = 0;
+	            this.dy = 0;
+	        }
+	        // copy properties from previousmove if starting inertia
+	        else if (phase === 'inertiastart') {
+	            this.dx = interaction.prevEvent.dx;
+	            this.dy = interaction.prevEvent.dy;
+	        }
+	        else {
+	            if (deltaSource === 'client') {
+	                this.dx = client.x - interaction.prevEvent.clientX;
+	                this.dy = client.y - interaction.prevEvent.clientY;
+	            }
+	            else {
+	                this.dx = page.x - interaction.prevEvent.pageX;
+	                this.dy = page.y - interaction.prevEvent.pageY;
+	            }
+	        }
+	        if (interaction.prevEvent && interaction.prevEvent.detail === 'inertia'
+	            && !inertiaStatus.active
+	            && options[action].inertia && options[action].inertia.zeroResumeDelta) {
+
+	            inertiaStatus.resumeDx += this.dx;
+	            inertiaStatus.resumeDy += this.dy;
+
+	            this.dx = this.dy = 0;
+	        }
+
+	        if (action === 'resize' && interaction.resizeAxes) {
+	            if (options.resize.square) {
+	                if (interaction.resizeAxes === 'y') {
+	                    this.dx = this.dy;
+	                }
+	                else {
+	                    this.dy = this.dx;
+	                }
+	                this.axes = 'xy';
+	            }
+	            else {
+	                this.axes = interaction.resizeAxes;
+
+	                if (interaction.resizeAxes === 'x') {
+	                    this.dy = 0;
+	                }
+	                else if (interaction.resizeAxes === 'y') {
+	                    this.dx = 0;
+	                }
+	            }
+	        }
+	        else if (action === 'gesture') {
+	            this.touches = [pointers[0], pointers[1]];
+
+	            if (starting) {
+	                this.distance = touchDistance(pointers, deltaSource);
+	                this.box      = touchBBox(pointers);
+	                this.scale    = 1;
+	                this.ds       = 0;
+	                this.angle    = touchAngle(pointers, undefined, deltaSource);
+	                this.da       = 0;
+	            }
+	            else if (ending || event instanceof InteractEvent) {
+	                this.distance = interaction.prevEvent.distance;
+	                this.box      = interaction.prevEvent.box;
+	                this.scale    = interaction.prevEvent.scale;
+	                this.ds       = this.scale - 1;
+	                this.angle    = interaction.prevEvent.angle;
+	                this.da       = this.angle - interaction.gesture.startAngle;
+	            }
+	            else {
+	                this.distance = touchDistance(pointers, deltaSource);
+	                this.box      = touchBBox(pointers);
+	                this.scale    = this.distance / interaction.gesture.startDistance;
+	                this.angle    = touchAngle(pointers, interaction.gesture.prevAngle, deltaSource);
+
+	                this.ds = this.scale - interaction.gesture.prevScale;
+	                this.da = this.angle - interaction.gesture.prevAngle;
+	            }
+	        }
+
+	        if (starting) {
+	            this.timeStamp = interaction.downTimes[0];
+	            this.dt        = 0;
+	            this.duration  = 0;
+	            this.speed     = 0;
+	            this.velocityX = 0;
+	            this.velocityY = 0;
+	        }
+	        else if (phase === 'inertiastart') {
+	            this.timeStamp = interaction.prevEvent.timeStamp;
+	            this.dt        = interaction.prevEvent.dt;
+	            this.duration  = interaction.prevEvent.duration;
+	            this.speed     = interaction.prevEvent.speed;
+	            this.velocityX = interaction.prevEvent.velocityX;
+	            this.velocityY = interaction.prevEvent.velocityY;
+	        }
+	        else {
+	            this.timeStamp = new Date().getTime();
+	            this.dt        = this.timeStamp - interaction.prevEvent.timeStamp;
+	            this.duration  = this.timeStamp - interaction.downTimes[0];
+
+	            if (event instanceof InteractEvent) {
+	                var dx = this[sourceX] - interaction.prevEvent[sourceX],
+	                    dy = this[sourceY] - interaction.prevEvent[sourceY],
+	                    dt = this.dt / 1000;
+
+	                this.speed = hypot(dx, dy) / dt;
+	                this.velocityX = dx / dt;
+	                this.velocityY = dy / dt;
+	            }
+	            // if normal move or end event, use previous user event coords
+	            else {
+	                // speed and velocity in pixels per second
+	                this.speed = interaction.pointerDelta[deltaSource].speed;
+	                this.velocityX = interaction.pointerDelta[deltaSource].vx;
+	                this.velocityY = interaction.pointerDelta[deltaSource].vy;
+	            }
+	        }
+
+	        if ((ending || phase === 'inertiastart')
+	            && interaction.prevEvent.speed > 600 && this.timeStamp - interaction.prevEvent.timeStamp < 150) {
+
+	            var angle = 180 * Math.atan2(interaction.prevEvent.velocityY, interaction.prevEvent.velocityX) / Math.PI,
+	                overlap = 22.5;
+
+	            if (angle < 0) {
+	                angle += 360;
+	            }
+
+	            var left = 135 - overlap <= angle && angle < 225 + overlap,
+	                up   = 225 - overlap <= angle && angle < 315 + overlap,
+
+	                right = !left && (315 - overlap <= angle || angle <  45 + overlap),
+	                down  = !up   &&   45 - overlap <= angle && angle < 135 + overlap;
+
+	            this.swipe = {
+	                up   : up,
+	                down : down,
+	                left : left,
+	                right: right,
+	                angle: angle,
+	                speed: interaction.prevEvent.speed,
+	                velocity: {
+	                    x: interaction.prevEvent.velocityX,
+	                    y: interaction.prevEvent.velocityY
+	                }
+	            };
+	        }
+	    }
+
+	    InteractEvent.prototype = {
+	        preventDefault: blank,
+	        stopImmediatePropagation: function () {
+	            this.immediatePropagationStopped = this.propagationStopped = true;
+	        },
+	        stopPropagation: function () {
+	            this.propagationStopped = true;
+	        }
+	    };
+
+	    function preventOriginalDefault () {
+	        this.originalEvent.preventDefault();
+	    }
+
+	    function getActionCursor (action) {
+	        var cursor = '';
+
+	        if (action.name === 'drag') {
+	            cursor =  actionCursors.drag;
+	        }
+	        if (action.name === 'resize') {
+	            if (action.axis) {
+	                cursor =  actionCursors[action.name + action.axis];
+	            }
+	            else if (action.edges) {
+	                var cursorKey = 'resize',
+	                    edgeNames = ['top', 'bottom', 'left', 'right'];
+
+	                for (var i = 0; i < 4; i++) {
+	                    if (action.edges[edgeNames[i]]) {
+	                        cursorKey += edgeNames[i];
+	                    }
+	                }
+
+	                cursor = actionCursors[cursorKey];
+	            }
+	        }
+
+	        return cursor;
+	    }
+
+	    function checkResizeEdge (name, value, page, element, interactableElement, rect, margin) {
+	        // false, '', undefined, null
+	        if (!value) { return false; }
+
+	        // true value, use pointer coords and element rect
+	        if (value === true) {
+	            // if dimensions are negative, "switch" edges
+	            var width = isNumber(rect.width)? rect.width : rect.right - rect.left,
+	                height = isNumber(rect.height)? rect.height : rect.bottom - rect.top;
+
+	            if (width < 0) {
+	                if      (name === 'left' ) { name = 'right'; }
+	                else if (name === 'right') { name = 'left' ; }
+	            }
+	            if (height < 0) {
+	                if      (name === 'top'   ) { name = 'bottom'; }
+	                else if (name === 'bottom') { name = 'top'   ; }
+	            }
+
+	            if (name === 'left'  ) { return page.x < ((width  >= 0? rect.left: rect.right ) + margin); }
+	            if (name === 'top'   ) { return page.y < ((height >= 0? rect.top : rect.bottom) + margin); }
+
+	            if (name === 'right' ) { return page.x > ((width  >= 0? rect.right : rect.left) - margin); }
+	            if (name === 'bottom') { return page.y > ((height >= 0? rect.bottom: rect.top ) - margin); }
+	        }
+
+	        // the remaining checks require an element
+	        if (!isElement(element)) { return false; }
+
+	        return isElement(value)
+	                    // the value is an element to use as a resize handle
+	                    ? value === element
+	                    // otherwise check if element matches value as selector
+	                    : matchesUpTo(element, value, interactableElement);
+	    }
+
+	    function defaultActionChecker (pointer, interaction, element) {
+	        var rect = this.getRect(element),
+	            shouldResize = false,
+	            action = null,
+	            resizeAxes = null,
+	            resizeEdges,
+	            page = extend({}, interaction.curCoords.page),
+	            options = this.options;
+
+	        if (!rect) { return null; }
+
+	        if (actionIsEnabled.resize && options.resize.enabled) {
+	            var resizeOptions = options.resize;
+
+	            resizeEdges = {
+	                left: false, right: false, top: false, bottom: false
+	            };
+
+	            // if using resize.edges
+	            if (isObject(resizeOptions.edges)) {
+	                for (var edge in resizeEdges) {
+	                    resizeEdges[edge] = checkResizeEdge(edge,
+	                                                        resizeOptions.edges[edge],
+	                                                        page,
+	                                                        interaction._eventTarget,
+	                                                        element,
+	                                                        rect,
+	                                                        resizeOptions.margin || margin);
+	                }
+
+	                resizeEdges.left = resizeEdges.left && !resizeEdges.right;
+	                resizeEdges.top  = resizeEdges.top  && !resizeEdges.bottom;
+
+	                shouldResize = resizeEdges.left || resizeEdges.right || resizeEdges.top || resizeEdges.bottom;
+	            }
+	            else {
+	                var right  = options.resize.axis !== 'y' && page.x > (rect.right  - margin),
+	                    bottom = options.resize.axis !== 'x' && page.y > (rect.bottom - margin);
+
+	                shouldResize = right || bottom;
+	                resizeAxes = (right? 'x' : '') + (bottom? 'y' : '');
+	            }
+	        }
+
+	        action = shouldResize
+	            ? 'resize'
+	            : actionIsEnabled.drag && options.drag.enabled
+	                ? 'drag'
+	                : null;
+
+	        if (actionIsEnabled.gesture
+	            && interaction.pointerIds.length >=2
+	            && !(interaction.dragging || interaction.resizing)) {
+	            action = 'gesture';
+	        }
+
+	        if (action) {
+	            return {
+	                name: action,
+	                axis: resizeAxes,
+	                edges: resizeEdges
+	            };
+	        }
+
+	        return null;
+	    }
+
+	    // Check if action is enabled globally and the current target supports it
+	    // If so, return the validated action. Otherwise, return null
+	    function validateAction (action, interactable) {
+	        if (!isObject(action)) { return null; }
+
+	        var actionName = action.name,
+	            options = interactable.options;
+
+	        if ((  (actionName  === 'resize'   && options.resize.enabled )
+	            || (actionName      === 'drag'     && options.drag.enabled  )
+	            || (actionName      === 'gesture'  && options.gesture.enabled))
+	            && actionIsEnabled[actionName]) {
+
+	            if (actionName === 'resize' || actionName === 'resizeyx') {
+	                actionName = 'resizexy';
+	            }
+
+	            return action;
+	        }
+	        return null;
+	    }
+
+	    var listeners = {},
+	        interactionListeners = [
+	            'dragStart', 'dragMove', 'resizeStart', 'resizeMove', 'gestureStart', 'gestureMove',
+	            'pointerOver', 'pointerOut', 'pointerHover', 'selectorDown',
+	            'pointerDown', 'pointerMove', 'pointerUp', 'pointerCancel', 'pointerEnd',
+	            'addPointer', 'removePointer', 'recordPointer', 'autoScrollMove'
+	        ];
+
+	    for (var i = 0, len = interactionListeners.length; i < len; i++) {
+	        var name = interactionListeners[i];
+
+	        listeners[name] = doOnInteractions(name);
+	    }
+
+	    // bound to the interactable context when a DOM event
+	    // listener is added to a selector interactable
+	    function delegateListener (event, useCapture) {
+	        var fakeEvent = {},
+	            delegated = delegatedEvents[event.type],
+	            eventTarget = getActualElement(event.path
+	                                           ? event.path[0]
+	                                           : event.target),
+	            element = eventTarget;
+
+	        useCapture = useCapture? true: false;
+
+	        // duplicate the event so that currentTarget can be changed
+	        for (var prop in event) {
+	            fakeEvent[prop] = event[prop];
+	        }
+
+	        fakeEvent.originalEvent = event;
+	        fakeEvent.preventDefault = preventOriginalDefault;
+
+	        // climb up document tree looking for selector matches
+	        while (isElement(element)) {
+	            for (var i = 0; i < delegated.selectors.length; i++) {
+	                var selector = delegated.selectors[i],
+	                    context = delegated.contexts[i];
+
+	                if (matchesSelector(element, selector)
+	                    && nodeContains(context, eventTarget)
+	                    && nodeContains(context, element)) {
+
+	                    var listeners = delegated.listeners[i];
+
+	                    fakeEvent.currentTarget = element;
+
+	                    for (var j = 0; j < listeners.length; j++) {
+	                        if (listeners[j][1] === useCapture) {
+	                            listeners[j][0](fakeEvent);
+	                        }
+	                    }
+	                }
+	            }
+
+	            element = parentElement(element);
+	        }
+	    }
+
+	    function delegateUseCapture (event) {
+	        return delegateListener.call(this, event, true);
+	    }
+
+	    interactables.indexOfElement = function indexOfElement (element, context) {
+	        context = context || document;
+
+	        for (var i = 0; i < this.length; i++) {
+	            var interactable = this[i];
+
+	            if ((interactable.selector === element
+	                && (interactable._context === context))
+	                || (!interactable.selector && interactable._element === element)) {
+
+	                return i;
+	            }
+	        }
+	        return -1;
+	    };
+
+	    interactables.get = function interactableGet (element, options) {
+	        return this[this.indexOfElement(element, options && options.context)];
+	    };
+
+	    interactables.forEachSelector = function (callback) {
+	        for (var i = 0; i < this.length; i++) {
+	            var interactable = this[i];
+
+	            if (!interactable.selector) {
+	                continue;
+	            }
+
+	            var ret = callback(interactable, interactable.selector, interactable._context, i, this);
+
+	            if (ret !== undefined) {
+	                return ret;
+	            }
+	        }
+	    };
+
+	    /*\
+	     * interact
+	     [ method ]
+	     *
+	     * The methods of this variable can be used to set elements as
+	     * interactables and also to change various default settings.
+	     *
+	     * Calling it as a function and passing an element or a valid CSS selector
+	     * string returns an Interactable object which has various methods to
+	     * configure it.
+	     *
+	     - element (Element | string) The HTML or SVG Element to interact with or CSS selector
+	     = (object) An @Interactable
+	     *
+	     > Usage
+	     | interact(document.getElementById('draggable')).draggable(true);
+	     |
+	     | var rectables = interact('rect');
+	     | rectables
+	     |     .gesturable(true)
+	     |     .on('gesturemove', function (event) {
+	     |         // something cool...
+	     |     })
+	     |     .autoScroll(true);
+	    \*/
+	    function interact (element, options) {
+	        return interactables.get(element, options) || new Interactable(element, options);
+	    }
+
+	    /*\
+	     * Interactable
+	     [ property ]
+	     **
+	     * Object type returned by @interact
+	    \*/
+	    function Interactable (element, options) {
+	        this._element = element;
+	        this._iEvents = this._iEvents || {};
+
+	        var _window;
+
+	        if (trySelector(element)) {
+	            this.selector = element;
+
+	            var context = options && options.context;
+
+	            _window = context? getWindow(context) : window;
+
+	            if (context && (_window.Node
+	                    ? context instanceof _window.Node
+	                    : (isElement(context) || context === _window.document))) {
+
+	                this._context = context;
+	            }
+	        }
+	        else {
+	            _window = getWindow(element);
+
+	            if (isElement(element, _window)) {
+
+	                if (supportsPointerEvent) {
+	                    events.add(this._element, pEventTypes.down, listeners.pointerDown );
+	                    events.add(this._element, pEventTypes.move, listeners.pointerHover);
+	                }
+	                else {
+	                    events.add(this._element, 'mousedown' , listeners.pointerDown );
+	                    events.add(this._element, 'mousemove' , listeners.pointerHover);
+	                    events.add(this._element, 'touchstart', listeners.pointerDown );
+	                    events.add(this._element, 'touchmove' , listeners.pointerHover);
+	                }
+	            }
+	        }
+
+	        this._doc = _window.document;
+
+	        if (!contains(documents, this._doc)) {
+	            listenToDocument(this._doc);
+	        }
+
+	        interactables.push(this);
+
+	        this.set(options);
+	    }
+
+	    Interactable.prototype = {
+	        setOnEvents: function (action, phases) {
+	            if (action === 'drop') {
+	                if (isFunction(phases.ondrop)          ) { this.ondrop           = phases.ondrop          ; }
+	                if (isFunction(phases.ondropactivate)  ) { this.ondropactivate   = phases.ondropactivate  ; }
+	                if (isFunction(phases.ondropdeactivate)) { this.ondropdeactivate = phases.ondropdeactivate; }
+	                if (isFunction(phases.ondragenter)     ) { this.ondragenter      = phases.ondragenter     ; }
+	                if (isFunction(phases.ondragleave)     ) { this.ondragleave      = phases.ondragleave     ; }
+	                if (isFunction(phases.ondropmove)      ) { this.ondropmove       = phases.ondropmove      ; }
+	            }
+	            else {
+	                action = 'on' + action;
+
+	                if (isFunction(phases.onstart)       ) { this[action + 'start'         ] = phases.onstart         ; }
+	                if (isFunction(phases.onmove)        ) { this[action + 'move'          ] = phases.onmove          ; }
+	                if (isFunction(phases.onend)         ) { this[action + 'end'           ] = phases.onend           ; }
+	                if (isFunction(phases.oninertiastart)) { this[action + 'inertiastart'  ] = phases.oninertiastart  ; }
+	            }
+
+	            return this;
+	        },
+
+	        /*\
+	         * Interactable.draggable
+	         [ method ]
+	         *
+	         * Gets or sets whether drag actions can be performed on the
+	         * Interactable
+	         *
+	         = (boolean) Indicates if this can be the target of drag events
+	         | var isDraggable = interact('ul li').draggable();
+	         * or
+	         - options (boolean | object) #optional true/false or An object with event listeners to be fired on drag events (object makes the Interactable draggable)
+	         = (object) This Interactable
+	         | interact(element).draggable({
+	         |     onstart: function (event) {},
+	         |     onmove : function (event) {},
+	         |     onend  : function (event) {},
+	         |
+	         |     // the axis in which the first movement must be
+	         |     // for the drag sequence to start
+	         |     // 'xy' by default - any direction
+	         |     axis: 'x' || 'y' || 'xy',
+	         |
+	         |     // max number of drags that can happen concurrently
+	         |     // with elements of this Interactable. Infinity by default
+	         |     max: Infinity,
+	         |
+	         |     // max number of drags that can target the same element+Interactable
+	         |     // 1 by default
+	         |     maxPerElement: 2
+	         | });
+	        \*/
+	        draggable: function (options) {
+	            if (isObject(options)) {
+	                this.options.drag.enabled = options.enabled === false? false: true;
+	                this.setPerAction('drag', options);
+	                this.setOnEvents('drag', options);
+
+	                if (/^x$|^y$|^xy$/.test(options.axis)) {
+	                    this.options.drag.axis = options.axis;
+	                }
+	                else if (options.axis === null) {
+	                    delete this.options.drag.axis;
+	                }
+
+	                return this;
+	            }
+
+	            if (isBool(options)) {
+	                this.options.drag.enabled = options;
+
+	                return this;
+	            }
+
+	            return this.options.drag;
+	        },
+
+	        setPerAction: function (action, options) {
+	            // for all the default per-action options
+	            for (var option in options) {
+	                // if this option exists for this action
+	                if (option in defaultOptions[action]) {
+	                    // if the option in the options arg is an object value
+	                    if (isObject(options[option])) {
+	                        // duplicate the object
+	                        this.options[action][option] = extend(this.options[action][option] || {}, options[option]);
+
+	                        if (isObject(defaultOptions.perAction[option]) && 'enabled' in defaultOptions.perAction[option]) {
+	                            this.options[action][option].enabled = options[option].enabled === false? false : true;
+	                        }
+	                    }
+	                    else if (isBool(options[option]) && isObject(defaultOptions.perAction[option])) {
+	                        this.options[action][option].enabled = options[option];
+	                    }
+	                    else if (options[option] !== undefined) {
+	                        // or if it's not undefined, do a plain assignment
+	                        this.options[action][option] = options[option];
+	                    }
+	                }
+	            }
+	        },
+
+	        /*\
+	         * Interactable.dropzone
+	         [ method ]
+	         *
+	         * Returns or sets whether elements can be dropped onto this
+	         * Interactable to trigger drop events
+	         *
+	         * Dropzones can receive the following events:
+	         *  - `dropactivate` and `dropdeactivate` when an acceptable drag starts and ends
+	         *  - `dragenter` and `dragleave` when a draggable enters and leaves the dropzone
+	         *  - `dragmove` when a draggable that has entered the dropzone is moved
+	         *  - `drop` when a draggable is dropped into this dropzone
+	         *
+	         *  Use the `accept` option to allow only elements that match the given CSS selector or element.
+	         *
+	         *  Use the `overlap` option to set how drops are checked for. The allowed values are:
+	         *   - `'pointer'`, the pointer must be over the dropzone (default)
+	         *   - `'center'`, the draggable element's center must be over the dropzone
+	         *   - a number from 0-1 which is the `(intersection area) / (draggable area)`.
+	         *       e.g. `0.5` for drop to happen when half of the area of the
+	         *       draggable is over the dropzone
+	         *
+	         - options (boolean | object | null) #optional The new value to be set.
+	         | interact('.drop').dropzone({
+	         |   accept: '.can-drop' || document.getElementById('single-drop'),
+	         |   overlap: 'pointer' || 'center' || zeroToOne
+	         | }
+	         = (boolean | object) The current setting or this Interactable
+	        \*/
+	        dropzone: function (options) {
+	            if (isObject(options)) {
+	                this.options.drop.enabled = options.enabled === false? false: true;
+	                this.setOnEvents('drop', options);
+
+	                if (/^(pointer|center)$/.test(options.overlap)) {
+	                    this.options.drop.overlap = options.overlap;
+	                }
+	                else if (isNumber(options.overlap)) {
+	                    this.options.drop.overlap = Math.max(Math.min(1, options.overlap), 0);
+	                }
+	                if ('accept' in options) {
+	                  this.options.drop.accept = options.accept;
+	                }
+	                if ('checker' in options) {
+	                  this.options.drop.checker = options.checker;
+	                }
+
+	                return this;
+	            }
+
+	            if (isBool(options)) {
+	                this.options.drop.enabled = options;
+
+	                return this;
+	            }
+
+	            return this.options.drop;
+	        },
+
+	        dropCheck: function (dragEvent, event, draggable, draggableElement, dropElement, rect) {
+	            var dropped = false;
+
+	            // if the dropzone has no rect (eg. display: none)
+	            // call the custom dropChecker or just return false
+	            if (!(rect = rect || this.getRect(dropElement))) {
+	                return (this.options.drop.checker
+	                    ? this.options.drop.checker(dragEvent, event, dropped, this, dropElement, draggable, draggableElement)
+	                    : false);
+	            }
+
+	            var dropOverlap = this.options.drop.overlap;
+
+	            if (dropOverlap === 'pointer') {
+	                var page = getPageXY(dragEvent),
+	                    origin = getOriginXY(draggable, draggableElement),
+	                    horizontal,
+	                    vertical;
+
+	                page.x += origin.x;
+	                page.y += origin.y;
+
+	                horizontal = (page.x > rect.left) && (page.x < rect.right);
+	                vertical   = (page.y > rect.top ) && (page.y < rect.bottom);
+
+	                dropped = horizontal && vertical;
+	            }
+
+	            var dragRect = draggable.getRect(draggableElement);
+
+	            if (dropOverlap === 'center') {
+	                var cx = dragRect.left + dragRect.width  / 2,
+	                    cy = dragRect.top  + dragRect.height / 2;
+
+	                dropped = cx >= rect.left && cx <= rect.right && cy >= rect.top && cy <= rect.bottom;
+	            }
+
+	            if (isNumber(dropOverlap)) {
+	                var overlapArea  = (Math.max(0, Math.min(rect.right , dragRect.right ) - Math.max(rect.left, dragRect.left))
+	                                  * Math.max(0, Math.min(rect.bottom, dragRect.bottom) - Math.max(rect.top , dragRect.top ))),
+	                    overlapRatio = overlapArea / (dragRect.width * dragRect.height);
+
+	                dropped = overlapRatio >= dropOverlap;
+	            }
+
+	            if (this.options.drop.checker) {
+	                dropped = this.options.drop.checker(dragEvent, event, dropped, this, dropElement, draggable, draggableElement);
+	            }
+
+	            return dropped;
+	        },
+
+	        /*\
+	         * Interactable.dropChecker
+	         [ method ]
+	         *
+	         * DEPRECATED. Use interactable.dropzone({ checker: function... }) instead.
+	         *
+	         * Gets or sets the function used to check if a dragged element is
+	         * over this Interactable.
+	         *
+	         - checker (function) #optional The function that will be called when checking for a drop
+	         = (Function | Interactable) The checker function or this Interactable
+	         *
+	         * The checker function takes the following arguments:
+	         *
+	         - dragEvent (InteractEvent) The related dragmove or dragend event
+	         - event (TouchEvent | PointerEvent | MouseEvent) The user move/up/end Event related to the dragEvent
+	         - dropped (boolean) The value from the default drop checker
+	         - dropzone (Interactable) The dropzone interactable
+	         - dropElement (Element) The dropzone element
+	         - draggable (Interactable) The Interactable being dragged
+	         - draggableElement (Element) The actual element that's being dragged
+	         *
+	         > Usage:
+	         | interact(target)
+	         | .dropChecker(function(dragEvent,         // related dragmove or dragend event
+	         |                       event,             // TouchEvent/PointerEvent/MouseEvent
+	         |                       dropped,           // bool result of the default checker
+	         |                       dropzone,          // dropzone Interactable
+	         |                       dropElement,       // dropzone elemnt
+	         |                       draggable,         // draggable Interactable
+	         |                       draggableElement) {// draggable element
+	         |
+	         |   return dropped && event.target.hasAttribute('allow-drop');
+	         | }
+	        \*/
+	        dropChecker: function (checker) {
+	            if (isFunction(checker)) {
+	                this.options.drop.checker = checker;
+
+	                return this;
+	            }
+	            if (checker === null) {
+	                delete this.options.getRect;
+
+	                return this;
+	            }
+
+	            return this.options.drop.checker;
+	        },
+
+	        /*\
+	         * Interactable.accept
+	         [ method ]
+	         *
+	         * Deprecated. add an `accept` property to the options object passed to
+	         * @Interactable.dropzone instead.
+	         *
+	         * Gets or sets the Element or CSS selector match that this
+	         * Interactable accepts if it is a dropzone.
+	         *
+	         - newValue (Element | string | null) #optional
+	         * If it is an Element, then only that element can be dropped into this dropzone.
+	         * If it is a string, the element being dragged must match it as a selector.
+	         * If it is null, the accept options is cleared - it accepts any element.
+	         *
+	         = (string | Element | null | Interactable) The current accept option if given `undefined` or this Interactable
+	        \*/
+	        accept: function (newValue) {
+	            if (isElement(newValue)) {
+	                this.options.drop.accept = newValue;
+
+	                return this;
+	            }
+
+	            // test if it is a valid CSS selector
+	            if (trySelector(newValue)) {
+	                this.options.drop.accept = newValue;
+
+	                return this;
+	            }
+
+	            if (newValue === null) {
+	                delete this.options.drop.accept;
+
+	                return this;
+	            }
+
+	            return this.options.drop.accept;
+	        },
+
+	        /*\
+	         * Interactable.resizable
+	         [ method ]
+	         *
+	         * Gets or sets whether resize actions can be performed on the
+	         * Interactable
+	         *
+	         = (boolean) Indicates if this can be the target of resize elements
+	         | var isResizeable = interact('input[type=text]').resizable();
+	         * or
+	         - options (boolean | object) #optional true/false or An object with event listeners to be fired on resize events (object makes the Interactable resizable)
+	         = (object) This Interactable
+	         | interact(element).resizable({
+	         |     onstart: function (event) {},
+	         |     onmove : function (event) {},
+	         |     onend  : function (event) {},
+	         |
+	         |     edges: {
+	         |       top   : true,       // Use pointer coords to check for resize.
+	         |       left  : false,      // Disable resizing from left edge.
+	         |       bottom: '.resize-s',// Resize if pointer target matches selector
+	         |       right : handleEl    // Resize if pointer target is the given Element
+	         |     },
+	         |
+	         |     // Width and height can be adjusted independently. When `true`, width and
+	         |     // height are adjusted at a 1:1 ratio.
+	         |     square: false,
+	         |
+	         |     // Width and height can be adjusted independently. When `true`, width and
+	         |     // height maintain the aspect ratio they had when resizing started.
+	         |     preserveAspectRatio: false,
+	         |
+	         |     // a value of 'none' will limit the resize rect to a minimum of 0x0
+	         |     // 'negate' will allow the rect to have negative width/height
+	         |     // 'reposition' will keep the width/height positive by swapping
+	         |     // the top and bottom edges and/or swapping the left and right edges
+	         |     invert: 'none' || 'negate' || 'reposition'
+	         |
+	         |     // limit multiple resizes.
+	         |     // See the explanation in the @Interactable.draggable example
+	         |     max: Infinity,
+	         |     maxPerElement: 1,
+	         | });
+	        \*/
+	        resizable: function (options) {
+	            if (isObject(options)) {
+	                this.options.resize.enabled = options.enabled === false? false: true;
+	                this.setPerAction('resize', options);
+	                this.setOnEvents('resize', options);
+
+	                if (/^x$|^y$|^xy$/.test(options.axis)) {
+	                    this.options.resize.axis = options.axis;
+	                }
+	                else if (options.axis === null) {
+	                    this.options.resize.axis = defaultOptions.resize.axis;
+	                }
+
+	                if (isBool(options.preserveAspectRatio)) {
+	                    this.options.resize.preserveAspectRatio = options.preserveAspectRatio;
+	                }
+	                else if (isBool(options.square)) {
+	                    this.options.resize.square = options.square;
+	                }
+
+	                return this;
+	            }
+	            if (isBool(options)) {
+	                this.options.resize.enabled = options;
+
+	                return this;
+	            }
+	            return this.options.resize;
+	        },
+
+	        /*\
+	         * Interactable.squareResize
+	         [ method ]
+	         *
+	         * Deprecated. Add a `square: true || false` property to @Interactable.resizable instead
+	         *
+	         * Gets or sets whether resizing is forced 1:1 aspect
+	         *
+	         = (boolean) Current setting
+	         *
+	         * or
+	         *
+	         - newValue (boolean) #optional
+	         = (object) this Interactable
+	        \*/
+	        squareResize: function (newValue) {
+	            if (isBool(newValue)) {
+	                this.options.resize.square = newValue;
+
+	                return this;
+	            }
+
+	            if (newValue === null) {
+	                delete this.options.resize.square;
+
+	                return this;
+	            }
+
+	            return this.options.resize.square;
+	        },
+
+	        /*\
+	         * Interactable.gesturable
+	         [ method ]
+	         *
+	         * Gets or sets whether multitouch gestures can be performed on the
+	         * Interactable's element
+	         *
+	         = (boolean) Indicates if this can be the target of gesture events
+	         | var isGestureable = interact(element).gesturable();
+	         * or
+	         - options (boolean | object) #optional true/false or An object with event listeners to be fired on gesture events (makes the Interactable gesturable)
+	         = (object) this Interactable
+	         | interact(element).gesturable({
+	         |     onstart: function (event) {},
+	         |     onmove : function (event) {},
+	         |     onend  : function (event) {},
+	         |
+	         |     // limit multiple gestures.
+	         |     // See the explanation in @Interactable.draggable example
+	         |     max: Infinity,
+	         |     maxPerElement: 1,
+	         | });
+	        \*/
+	        gesturable: function (options) {
+	            if (isObject(options)) {
+	                this.options.gesture.enabled = options.enabled === false? false: true;
+	                this.setPerAction('gesture', options);
+	                this.setOnEvents('gesture', options);
+
+	                return this;
+	            }
+
+	            if (isBool(options)) {
+	                this.options.gesture.enabled = options;
+
+	                return this;
+	            }
+
+	            return this.options.gesture;
+	        },
+
+	        /*\
+	         * Interactable.autoScroll
+	         [ method ]
+	         **
+	         * Deprecated. Add an `autoscroll` property to the options object
+	         * passed to @Interactable.draggable or @Interactable.resizable instead.
+	         *
+	         * Returns or sets whether dragging and resizing near the edges of the
+	         * window/container trigger autoScroll for this Interactable
+	         *
+	         = (object) Object with autoScroll properties
+	         *
+	         * or
+	         *
+	         - options (object | boolean) #optional
+	         * options can be:
+	         * - an object with margin, distance and interval properties,
+	         * - true or false to enable or disable autoScroll or
+	         = (Interactable) this Interactable
+	        \*/
+	        autoScroll: function (options) {
+	            if (isObject(options)) {
+	                options = extend({ actions: ['drag', 'resize']}, options);
+	            }
+	            else if (isBool(options)) {
+	                options = { actions: ['drag', 'resize'], enabled: options };
+	            }
+
+	            return this.setOptions('autoScroll', options);
+	        },
+
+	        /*\
+	         * Interactable.snap
+	         [ method ]
+	         **
+	         * Deprecated. Add a `snap` property to the options object passed
+	         * to @Interactable.draggable or @Interactable.resizable instead.
+	         *
+	         * Returns or sets if and how action coordinates are snapped. By
+	         * default, snapping is relative to the pointer coordinates. You can
+	         * change this by setting the
+	         * [`elementOrigin`](https://github.com/taye/interact.js/pull/72).
+	         **
+	         = (boolean | object) `false` if snap is disabled; object with snap properties if snap is enabled
+	         **
+	         * or
+	         **
+	         - options (object | boolean | null) #optional
+	         = (Interactable) this Interactable
+	         > Usage
+	         | interact(document.querySelector('#thing')).snap({
+	         |     targets: [
+	         |         // snap to this specific point
+	         |         {
+	         |             x: 100,
+	         |             y: 100,
+	         |             range: 25
+	         |         },
+	         |         // give this function the x and y page coords and snap to the object returned
+	         |         function (x, y) {
+	         |             return {
+	         |                 x: x,
+	         |                 y: (75 + 50 * Math.sin(x * 0.04)),
+	         |                 range: 40
+	         |             };
+	         |         },
+	         |         // create a function that snaps to a grid
+	         |         interact.createSnapGrid({
+	         |             x: 50,
+	         |             y: 50,
+	         |             range: 10,              // optional
+	         |             offset: { x: 5, y: 10 } // optional
+	         |         })
+	         |     ],
+	         |     // do not snap during normal movement.
+	         |     // Instead, trigger only one snapped move event
+	         |     // immediately before the end event.
+	         |     endOnly: true,
+	         |
+	         |     relativePoints: [
+	         |         { x: 0, y: 0 },  // snap relative to the top left of the element
+	         |         { x: 1, y: 1 },  // and also to the bottom right
+	         |     ],  
+	         |
+	         |     // offset the snap target coordinates
+	         |     // can be an object with x/y or 'startCoords'
+	         |     offset: { x: 50, y: 50 }
+	         |   }
+	         | });
+	        \*/
+	        snap: function (options) {
+	            var ret = this.setOptions('snap', options);
+
+	            if (ret === this) { return this; }
+
+	            return ret.drag;
+	        },
+
+	        setOptions: function (option, options) {
+	            var actions = options && isArray(options.actions)
+	                    ? options.actions
+	                    : ['drag'];
+
+	            var i;
+
+	            if (isObject(options) || isBool(options)) {
+	                for (i = 0; i < actions.length; i++) {
+	                    var action = /resize/.test(actions[i])? 'resize' : actions[i];
+
+	                    if (!isObject(this.options[action])) { continue; }
+
+	                    var thisOption = this.options[action][option];
+
+	                    if (isObject(options)) {
+	                        extend(thisOption, options);
+	                        thisOption.enabled = options.enabled === false? false: true;
+
+	                        if (option === 'snap') {
+	                            if (thisOption.mode === 'grid') {
+	                                thisOption.targets = [
+	                                    interact.createSnapGrid(extend({
+	                                        offset: thisOption.gridOffset || { x: 0, y: 0 }
+	                                    }, thisOption.grid || {}))
+	                                ];
+	                            }
+	                            else if (thisOption.mode === 'anchor') {
+	                                thisOption.targets = thisOption.anchors;
+	                            }
+	                            else if (thisOption.mode === 'path') {
+	                                thisOption.targets = thisOption.paths;
+	                            }
+
+	                            if ('elementOrigin' in options) {
+	                                thisOption.relativePoints = [options.elementOrigin];
+	                            }
+	                        }
+	                    }
+	                    else if (isBool(options)) {
+	                        thisOption.enabled = options;
+	                    }
+	                }
+
+	                return this;
+	            }
+
+	            var ret = {},
+	                allActions = ['drag', 'resize', 'gesture'];
+
+	            for (i = 0; i < allActions.length; i++) {
+	                if (option in defaultOptions[allActions[i]]) {
+	                    ret[allActions[i]] = this.options[allActions[i]][option];
+	                }
+	            }
+
+	            return ret;
+	        },
+
+
+	        /*\
+	         * Interactable.inertia
+	         [ method ]
+	         **
+	         * Deprecated. Add an `inertia` property to the options object passed
+	         * to @Interactable.draggable or @Interactable.resizable instead.
+	         *
+	         * Returns or sets if and how events continue to run after the pointer is released
+	         **
+	         = (boolean | object) `false` if inertia is disabled; `object` with inertia properties if inertia is enabled
+	         **
+	         * or
+	         **
+	         - options (object | boolean | null) #optional
+	         = (Interactable) this Interactable
+	         > Usage
+	         | // enable and use default settings
+	         | interact(element).inertia(true);
+	         |
+	         | // enable and use custom settings
+	         | interact(element).inertia({
+	         |     // value greater than 0
+	         |     // high values slow the object down more quickly
+	         |     resistance     : 16,
+	         |
+	         |     // the minimum launch speed (pixels per second) that results in inertia start
+	         |     minSpeed       : 200,
+	         |
+	         |     // inertia will stop when the object slows down to this speed
+	         |     endSpeed       : 20,
+	         |
+	         |     // boolean; should actions be resumed when the pointer goes down during inertia
+	         |     allowResume    : true,
+	         |
+	         |     // boolean; should the jump when resuming from inertia be ignored in event.dx/dy
+	         |     zeroResumeDelta: false,
+	         |
+	         |     // if snap/restrict are set to be endOnly and inertia is enabled, releasing
+	         |     // the pointer without triggering inertia will animate from the release
+	         |     // point to the snaped/restricted point in the given amount of time (ms)
+	         |     smoothEndDuration: 300,
+	         |
+	         |     // an array of action types that can have inertia (no gesture)
+	         |     actions        : ['drag', 'resize']
+	         | });
+	         |
+	         | // reset custom settings and use all defaults
+	         | interact(element).inertia(null);
+	        \*/
+	        inertia: function (options) {
+	            var ret = this.setOptions('inertia', options);
+
+	            if (ret === this) { return this; }
+
+	            return ret.drag;
+	        },
+
+	        getAction: function (pointer, event, interaction, element) {
+	            var action = this.defaultActionChecker(pointer, interaction, element);
+
+	            if (this.options.actionChecker) {
+	                return this.options.actionChecker(pointer, event, action, this, element, interaction);
+	            }
+
+	            return action;
+	        },
+
+	        defaultActionChecker: defaultActionChecker,
+
+	        /*\
+	         * Interactable.actionChecker
+	         [ method ]
+	         *
+	         * Gets or sets the function used to check action to be performed on
+	         * pointerDown
+	         *
+	         - checker (function | null) #optional A function which takes a pointer event, defaultAction string, interactable, element and interaction as parameters and returns an object with name property 'drag' 'resize' or 'gesture' and optionally an `edges` object with boolean 'top', 'left', 'bottom' and right props.
+	         = (Function | Interactable) The checker function or this Interactable
+	         *
+	         | interact('.resize-drag')
+	         |   .resizable(true)
+	         |   .draggable(true)
+	         |   .actionChecker(function (pointer, event, action, interactable, element, interaction) {
+	         |
+	         |   if (interact.matchesSelector(event.target, '.drag-handle') {
+	         |     // force drag with handle target
+	         |     action.name = drag;
+	         |   }
+	         |   else {
+	         |     // resize from the top and right edges
+	         |     action.name  = 'resize';
+	         |     action.edges = { top: true, right: true };
+	         |   }
+	         |
+	         |   return action;
+	         | });
+	        \*/
+	        actionChecker: function (checker) {
+	            if (isFunction(checker)) {
+	                this.options.actionChecker = checker;
+
+	                return this;
+	            }
+
+	            if (checker === null) {
+	                delete this.options.actionChecker;
+
+	                return this;
+	            }
+
+	            return this.options.actionChecker;
+	        },
+
+	        /*\
+	         * Interactable.getRect
+	         [ method ]
+	         *
+	         * The default function to get an Interactables bounding rect. Can be
+	         * overridden using @Interactable.rectChecker.
+	         *
+	         - element (Element) #optional The element to measure.
+	         = (object) The object's bounding rectangle.
+	         o {
+	         o     top   : 0,
+	         o     left  : 0,
+	         o     bottom: 0,
+	         o     right : 0,
+	         o     width : 0,
+	         o     height: 0
+	         o }
+	        \*/
+	        getRect: function rectCheck (element) {
+	            element = element || this._element;
+
+	            if (this.selector && !(isElement(element))) {
+	                element = this._context.querySelector(this.selector);
+	            }
+
+	            return getElementRect(element);
+	        },
+
+	        /*\
+	         * Interactable.rectChecker
+	         [ method ]
+	         *
+	         * Returns or sets the function used to calculate the interactable's
+	         * element's rectangle
+	         *
+	         - checker (function) #optional A function which returns this Interactable's bounding rectangle. See @Interactable.getRect
+	         = (function | object) The checker function or this Interactable
+	        \*/
+	        rectChecker: function (checker) {
+	            if (isFunction(checker)) {
+	                this.getRect = checker;
+
+	                return this;
+	            }
+
+	            if (checker === null) {
+	                delete this.options.getRect;
+
+	                return this;
+	            }
+
+	            return this.getRect;
+	        },
+
+	        /*\
+	         * Interactable.styleCursor
+	         [ method ]
+	         *
+	         * Returns or sets whether the action that would be performed when the
+	         * mouse on the element are checked on `mousemove` so that the cursor
+	         * may be styled appropriately
+	         *
+	         - newValue (boolean) #optional
+	         = (boolean | Interactable) The current setting or this Interactable
+	        \*/
+	        styleCursor: function (newValue) {
+	            if (isBool(newValue)) {
+	                this.options.styleCursor = newValue;
+
+	                return this;
+	            }
+
+	            if (newValue === null) {
+	                delete this.options.styleCursor;
+
+	                return this;
+	            }
+
+	            return this.options.styleCursor;
+	        },
+
+	        /*\
+	         * Interactable.preventDefault
+	         [ method ]
+	         *
+	         * Returns or sets whether to prevent the browser's default behaviour
+	         * in response to pointer events. Can be set to:
+	         *  - `'always'` to always prevent
+	         *  - `'never'` to never prevent
+	         *  - `'auto'` to let interact.js try to determine what would be best
+	         *
+	         - newValue (string) #optional `true`, `false` or `'auto'`
+	         = (string | Interactable) The current setting or this Interactable
+	        \*/
+	        preventDefault: function (newValue) {
+	            if (/^(always|never|auto)$/.test(newValue)) {
+	                this.options.preventDefault = newValue;
+	                return this;
+	            }
+
+	            if (isBool(newValue)) {
+	                this.options.preventDefault = newValue? 'always' : 'never';
+	                return this;
+	            }
+
+	            return this.options.preventDefault;
+	        },
+
+	        /*\
+	         * Interactable.origin
+	         [ method ]
+	         *
+	         * Gets or sets the origin of the Interactable's element.  The x and y
+	         * of the origin will be subtracted from action event coordinates.
+	         *
+	         - origin (object | string) #optional An object eg. { x: 0, y: 0 } or string 'parent', 'self' or any CSS selector
+	         * OR
+	         - origin (Element) #optional An HTML or SVG Element whose rect will be used
+	         **
+	         = (object) The current origin or this Interactable
+	        \*/
+	        origin: function (newValue) {
+	            if (trySelector(newValue)) {
+	                this.options.origin = newValue;
+	                return this;
+	            }
+	            else if (isObject(newValue)) {
+	                this.options.origin = newValue;
+	                return this;
+	            }
+
+	            return this.options.origin;
+	        },
+
+	        /*\
+	         * Interactable.deltaSource
+	         [ method ]
+	         *
+	         * Returns or sets the mouse coordinate types used to calculate the
+	         * movement of the pointer.
+	         *
+	         - newValue (string) #optional Use 'client' if you will be scrolling while interacting; Use 'page' if you want autoScroll to work
+	         = (string | object) The current deltaSource or this Interactable
+	        \*/
+	        deltaSource: function (newValue) {
+	            if (newValue === 'page' || newValue === 'client') {
+	                this.options.deltaSource = newValue;
+
+	                return this;
+	            }
+
+	            return this.options.deltaSource;
+	        },
+
+	        /*\
+	         * Interactable.restrict
+	         [ method ]
+	         **
+	         * Deprecated. Add a `restrict` property to the options object passed to
+	         * @Interactable.draggable, @Interactable.resizable or @Interactable.gesturable instead.
+	         *
+	         * Returns or sets the rectangles within which actions on this
+	         * interactable (after snap calculations) are restricted. By default,
+	         * restricting is relative to the pointer coordinates. You can change
+	         * this by setting the
+	         * [`elementRect`](https://github.com/taye/interact.js/pull/72).
+	         **
+	         - options (object) #optional an object with keys drag, resize, and/or gesture whose values are rects, Elements, CSS selectors, or 'parent' or 'self'
+	         = (object) The current restrictions object or this Interactable
+	         **
+	         | interact(element).restrict({
+	         |     // the rect will be `interact.getElementRect(element.parentNode)`
+	         |     drag: element.parentNode,
+	         |
+	         |     // x and y are relative to the the interactable's origin
+	         |     resize: { x: 100, y: 100, width: 200, height: 200 }
+	         | })
+	         |
+	         | interact('.draggable').restrict({
+	         |     // the rect will be the selected element's parent
+	         |     drag: 'parent',
+	         |
+	         |     // do not restrict during normal movement.
+	         |     // Instead, trigger only one restricted move event
+	         |     // immediately before the end event.
+	         |     endOnly: true,
+	         |
+	         |     // https://github.com/taye/interact.js/pull/72#issue-41813493
+	         |     elementRect: { top: 0, left: 0, bottom: 1, right: 1 }
+	         | });
+	        \*/
+	        restrict: function (options) {
+	            if (!isObject(options)) {
+	                return this.setOptions('restrict', options);
+	            }
+
+	            var actions = ['drag', 'resize', 'gesture'],
+	                ret;
+
+	            for (var i = 0; i < actions.length; i++) {
+	                var action = actions[i];
+
+	                if (action in options) {
+	                    var perAction = extend({
+	                            actions: [action],
+	                            restriction: options[action]
+	                        }, options);
+
+	                    ret = this.setOptions('restrict', perAction);
+	                }
+	            }
+
+	            return ret;
+	        },
+
+	        /*\
+	         * Interactable.context
+	         [ method ]
+	         *
+	         * Gets the selector context Node of the Interactable. The default is `window.document`.
+	         *
+	         = (Node) The context Node of this Interactable
+	         **
+	        \*/
+	        context: function () {
+	            return this._context;
+	        },
+
+	        _context: document,
+
+	        /*\
+	         * Interactable.ignoreFrom
+	         [ method ]
+	         *
+	         * If the target of the `mousedown`, `pointerdown` or `touchstart`
+	         * event or any of it's parents match the given CSS selector or
+	         * Element, no drag/resize/gesture is started.
+	         *
+	         - newValue (string | Element | null) #optional a CSS selector string, an Element or `null` to not ignore any elements
+	         = (string | Element | object) The current ignoreFrom value or this Interactable
+	         **
+	         | interact(element, { ignoreFrom: document.getElementById('no-action') });
+	         | // or
+	         | interact(element).ignoreFrom('input, textarea, a');
+	        \*/
+	        ignoreFrom: function (newValue) {
+	            if (trySelector(newValue)) {            // CSS selector to match event.target
+	                this.options.ignoreFrom = newValue;
+	                return this;
+	            }
+
+	            if (isElement(newValue)) {              // specific element
+	                this.options.ignoreFrom = newValue;
+	                return this;
+	            }
+
+	            return this.options.ignoreFrom;
+	        },
+
+	        /*\
+	         * Interactable.allowFrom
+	         [ method ]
+	         *
+	         * A drag/resize/gesture is started only If the target of the
+	         * `mousedown`, `pointerdown` or `touchstart` event or any of it's
+	         * parents match the given CSS selector or Element.
+	         *
+	         - newValue (string | Element | null) #optional a CSS selector string, an Element or `null` to allow from any element
+	         = (string | Element | object) The current allowFrom value or this Interactable
+	         **
+	         | interact(element, { allowFrom: document.getElementById('drag-handle') });
+	         | // or
+	         | interact(element).allowFrom('.handle');
+	        \*/
+	        allowFrom: function (newValue) {
+	            if (trySelector(newValue)) {            // CSS selector to match event.target
+	                this.options.allowFrom = newValue;
+	                return this;
+	            }
+
+	            if (isElement(newValue)) {              // specific element
+	                this.options.allowFrom = newValue;
+	                return this;
+	            }
+
+	            return this.options.allowFrom;
+	        },
+
+	        /*\
+	         * Interactable.element
+	         [ method ]
+	         *
+	         * If this is not a selector Interactable, it returns the element this
+	         * interactable represents
+	         *
+	         = (Element) HTML / SVG Element
+	        \*/
+	        element: function () {
+	            return this._element;
+	        },
+
+	        /*\
+	         * Interactable.fire
+	         [ method ]
+	         *
+	         * Calls listeners for the given InteractEvent type bound globally
+	         * and directly to this Interactable
+	         *
+	         - iEvent (InteractEvent) The InteractEvent object to be fired on this Interactable
+	         = (Interactable) this Interactable
+	        \*/
+	        fire: function (iEvent) {
+	            if (!(iEvent && iEvent.type) || !contains(eventTypes, iEvent.type)) {
+	                return this;
+	            }
+
+	            var listeners,
+	                i,
+	                len,
+	                onEvent = 'on' + iEvent.type,
+	                funcName = '';
+
+	            // Interactable#on() listeners
+	            if (iEvent.type in this._iEvents) {
+	                listeners = this._iEvents[iEvent.type];
+
+	                for (i = 0, len = listeners.length; i < len && !iEvent.immediatePropagationStopped; i++) {
+	                    funcName = listeners[i].name;
+	                    listeners[i](iEvent);
+	                }
+	            }
+
+	            // interactable.onevent listener
+	            if (isFunction(this[onEvent])) {
+	                funcName = this[onEvent].name;
+	                this[onEvent](iEvent);
+	            }
+
+	            // interact.on() listeners
+	            if (iEvent.type in globalEvents && (listeners = globalEvents[iEvent.type]))  {
+
+	                for (i = 0, len = listeners.length; i < len && !iEvent.immediatePropagationStopped; i++) {
+	                    funcName = listeners[i].name;
+	                    listeners[i](iEvent);
+	                }
+	            }
+
+	            return this;
+	        },
+
+	        /*\
+	         * Interactable.on
+	         [ method ]
+	         *
+	         * Binds a listener for an InteractEvent or DOM event.
+	         *
+	         - eventType  (string | array | object) The types of events to listen for
+	         - listener   (function) The function to be called on the given event(s)
+	         - useCapture (boolean) #optional useCapture flag for addEventListener
+	         = (object) This Interactable
+	        \*/
+	        on: function (eventType, listener, useCapture) {
+	            var i;
+
+	            if (isString(eventType) && eventType.search(' ') !== -1) {
+	                eventType = eventType.trim().split(/ +/);
+	            }
+
+	            if (isArray(eventType)) {
+	                for (i = 0; i < eventType.length; i++) {
+	                    this.on(eventType[i], listener, useCapture);
+	                }
+
+	                return this;
+	            }
+
+	            if (isObject(eventType)) {
+	                for (var prop in eventType) {
+	                    this.on(prop, eventType[prop], listener);
+	                }
+
+	                return this;
+	            }
+
+	            if (eventType === 'wheel') {
+	                eventType = wheelEvent;
+	            }
+
+	            // convert to boolean
+	            useCapture = useCapture? true: false;
+
+	            if (contains(eventTypes, eventType)) {
+	                // if this type of event was never bound to this Interactable
+	                if (!(eventType in this._iEvents)) {
+	                    this._iEvents[eventType] = [listener];
+	                }
+	                else {
+	                    this._iEvents[eventType].push(listener);
+	                }
+	            }
+	            // delegated event for selector
+	            else if (this.selector) {
+	                if (!delegatedEvents[eventType]) {
+	                    delegatedEvents[eventType] = {
+	                        selectors: [],
+	                        contexts : [],
+	                        listeners: []
+	                    };
+
+	                    // add delegate listener functions
+	                    for (i = 0; i < documents.length; i++) {
+	                        events.add(documents[i], eventType, delegateListener);
+	                        events.add(documents[i], eventType, delegateUseCapture, true);
+	                    }
+	                }
+
+	                var delegated = delegatedEvents[eventType],
+	                    index;
+
+	                for (index = delegated.selectors.length - 1; index >= 0; index--) {
+	                    if (delegated.selectors[index] === this.selector
+	                        && delegated.contexts[index] === this._context) {
+	                        break;
+	                    }
+	                }
+
+	                if (index === -1) {
+	                    index = delegated.selectors.length;
+
+	                    delegated.selectors.push(this.selector);
+	                    delegated.contexts .push(this._context);
+	                    delegated.listeners.push([]);
+	                }
+
+	                // keep listener and useCapture flag
+	                delegated.listeners[index].push([listener, useCapture]);
+	            }
+	            else {
+	                events.add(this._element, eventType, listener, useCapture);
+	            }
+
+	            return this;
+	        },
+
+	        /*\
+	         * Interactable.off
+	         [ method ]
+	         *
+	         * Removes an InteractEvent or DOM event listener
+	         *
+	         - eventType  (string | array | object) The types of events that were listened for
+	         - listener   (function) The listener function to be removed
+	         - useCapture (boolean) #optional useCapture flag for removeEventListener
+	         = (object) This Interactable
+	        \*/
+	        off: function (eventType, listener, useCapture) {
+	            var i;
+
+	            if (isString(eventType) && eventType.search(' ') !== -1) {
+	                eventType = eventType.trim().split(/ +/);
+	            }
+
+	            if (isArray(eventType)) {
+	                for (i = 0; i < eventType.length; i++) {
+	                    this.off(eventType[i], listener, useCapture);
+	                }
+
+	                return this;
+	            }
+
+	            if (isObject(eventType)) {
+	                for (var prop in eventType) {
+	                    this.off(prop, eventType[prop], listener);
+	                }
+
+	                return this;
+	            }
+
+	            var eventList,
+	                index = -1;
+
+	            // convert to boolean
+	            useCapture = useCapture? true: false;
+
+	            if (eventType === 'wheel') {
+	                eventType = wheelEvent;
+	            }
+
+	            // if it is an action event type
+	            if (contains(eventTypes, eventType)) {
+	                eventList = this._iEvents[eventType];
+
+	                if (eventList && (index = indexOf(eventList, listener)) !== -1) {
+	                    this._iEvents[eventType].splice(index, 1);
+	                }
+	            }
+	            // delegated event
+	            else if (this.selector) {
+	                var delegated = delegatedEvents[eventType],
+	                    matchFound = false;
+
+	                if (!delegated) { return this; }
+
+	                // count from last index of delegated to 0
+	                for (index = delegated.selectors.length - 1; index >= 0; index--) {
+	                    // look for matching selector and context Node
+	                    if (delegated.selectors[index] === this.selector
+	                        && delegated.contexts[index] === this._context) {
+
+	                        var listeners = delegated.listeners[index];
+
+	                        // each item of the listeners array is an array: [function, useCaptureFlag]
+	                        for (i = listeners.length - 1; i >= 0; i--) {
+	                            var fn = listeners[i][0],
+	                                useCap = listeners[i][1];
+
+	                            // check if the listener functions and useCapture flags match
+	                            if (fn === listener && useCap === useCapture) {
+	                                // remove the listener from the array of listeners
+	                                listeners.splice(i, 1);
+
+	                                // if all listeners for this interactable have been removed
+	                                // remove the interactable from the delegated arrays
+	                                if (!listeners.length) {
+	                                    delegated.selectors.splice(index, 1);
+	                                    delegated.contexts .splice(index, 1);
+	                                    delegated.listeners.splice(index, 1);
+
+	                                    // remove delegate function from context
+	                                    events.remove(this._context, eventType, delegateListener);
+	                                    events.remove(this._context, eventType, delegateUseCapture, true);
+
+	                                    // remove the arrays if they are empty
+	                                    if (!delegated.selectors.length) {
+	                                        delegatedEvents[eventType] = null;
+	                                    }
+	                                }
+
+	                                // only remove one listener
+	                                matchFound = true;
+	                                break;
+	                            }
+	                        }
+
+	                        if (matchFound) { break; }
+	                    }
+	                }
+	            }
+	            // remove listener from this Interatable's element
+	            else {
+	                events.remove(this._element, eventType, listener, useCapture);
+	            }
+
+	            return this;
+	        },
+
+	        /*\
+	         * Interactable.set
+	         [ method ]
+	         *
+	         * Reset the options of this Interactable
+	         - options (object) The new settings to apply
+	         = (object) This Interactable
+	        \*/
+	        set: function (options) {
+	            if (!isObject(options)) {
+	                options = {};
+	            }
+
+	            this.options = extend({}, defaultOptions.base);
+
+	            var i,
+	                actions = ['drag', 'drop', 'resize', 'gesture'],
+	                methods = ['draggable', 'dropzone', 'resizable', 'gesturable'],
+	                perActions = extend(extend({}, defaultOptions.perAction), options[action] || {});
+
+	            for (i = 0; i < actions.length; i++) {
+	                var action = actions[i];
+
+	                this.options[action] = extend({}, defaultOptions[action]);
+
+	                this.setPerAction(action, perActions);
+
+	                this[methods[i]](options[action]);
+	            }
+
+	            var settings = [
+	                    'accept', 'actionChecker', 'allowFrom', 'deltaSource',
+	                    'dropChecker', 'ignoreFrom', 'origin', 'preventDefault',
+	                    'rectChecker', 'styleCursor'
+	                ];
+
+	            for (i = 0, len = settings.length; i < len; i++) {
+	                var setting = settings[i];
+
+	                this.options[setting] = defaultOptions.base[setting];
+
+	                if (setting in options) {
+	                    this[setting](options[setting]);
+	                }
+	            }
+
+	            return this;
+	        },
+
+	        /*\
+	         * Interactable.unset
+	         [ method ]
+	         *
+	         * Remove this interactable from the list of interactables and remove
+	         * it's drag, drop, resize and gesture capabilities
+	         *
+	         = (object) @interact
+	        \*/
+	        unset: function () {
+	            events.remove(this._element, 'all');
+
+	            if (!isString(this.selector)) {
+	                events.remove(this, 'all');
+	                if (this.options.styleCursor) {
+	                    this._element.style.cursor = '';
+	                }
+	            }
+	            else {
+	                // remove delegated events
+	                for (var type in delegatedEvents) {
+	                    var delegated = delegatedEvents[type];
+
+	                    for (var i = 0; i < delegated.selectors.length; i++) {
+	                        if (delegated.selectors[i] === this.selector
+	                            && delegated.contexts[i] === this._context) {
+
+	                            delegated.selectors.splice(i, 1);
+	                            delegated.contexts .splice(i, 1);
+	                            delegated.listeners.splice(i, 1);
+
+	                            // remove the arrays if they are empty
+	                            if (!delegated.selectors.length) {
+	                                delegatedEvents[type] = null;
+	                            }
+	                        }
+
+	                        events.remove(this._context, type, delegateListener);
+	                        events.remove(this._context, type, delegateUseCapture, true);
+
+	                        break;
+	                    }
+	                }
+	            }
+
+	            this.dropzone(false);
+
+	            interactables.splice(indexOf(interactables, this), 1);
+
+	            return interact;
+	        }
+	    };
+
+	    function warnOnce (method, message) {
+	        var warned = false;
+
+	        return function () {
+	            if (!warned) {
+	                window.console.warn(message);
+	                warned = true;
+	            }
+
+	            return method.apply(this, arguments);
+	        };
+	    }
+
+	    Interactable.prototype.snap = warnOnce(Interactable.prototype.snap,
+	         'Interactable#snap is deprecated. See the new documentation for snapping at http://interactjs.io/docs/snapping');
+	    Interactable.prototype.restrict = warnOnce(Interactable.prototype.restrict,
+	         'Interactable#restrict is deprecated. See the new documentation for resticting at http://interactjs.io/docs/restriction');
+	    Interactable.prototype.inertia = warnOnce(Interactable.prototype.inertia,
+	         'Interactable#inertia is deprecated. See the new documentation for inertia at http://interactjs.io/docs/inertia');
+	    Interactable.prototype.autoScroll = warnOnce(Interactable.prototype.autoScroll,
+	         'Interactable#autoScroll is deprecated. See the new documentation for autoScroll at http://interactjs.io/docs/#autoscroll');
+	    Interactable.prototype.squareResize = warnOnce(Interactable.prototype.squareResize,
+	         'Interactable#squareResize is deprecated. See http://interactjs.io/docs/#resize-square');
+
+	    Interactable.prototype.accept = warnOnce(Interactable.prototype.accept,
+	         'Interactable#accept is deprecated. use Interactable#dropzone({ accept: target }) instead');
+	    Interactable.prototype.dropChecker = warnOnce(Interactable.prototype.dropChecker,
+	         'Interactable#dropChecker is deprecated. use Interactable#dropzone({ dropChecker: checkerFunction }) instead');
+	    Interactable.prototype.context = warnOnce(Interactable.prototype.context,
+	         'Interactable#context as a method is deprecated. It will soon be a DOM Node instead');
+
+	    /*\
+	     * interact.isSet
+	     [ method ]
+	     *
+	     * Check if an element has been set
+	     - element (Element) The Element being searched for
+	     = (boolean) Indicates if the element or CSS selector was previously passed to interact
+	    \*/
+	    interact.isSet = function(element, options) {
+	        return interactables.indexOfElement(element, options && options.context) !== -1;
+	    };
+
+	    /*\
+	     * interact.on
+	     [ method ]
+	     *
+	     * Adds a global listener for an InteractEvent or adds a DOM event to
+	     * `document`
+	     *
+	     - type       (string | array | object) The types of events to listen for
+	     - listener   (function) The function to be called on the given event(s)
+	     - useCapture (boolean) #optional useCapture flag for addEventListener
+	     = (object) interact
+	    \*/
+	    interact.on = function (type, listener, useCapture) {
+	        if (isString(type) && type.search(' ') !== -1) {
+	            type = type.trim().split(/ +/);
+	        }
+
+	        if (isArray(type)) {
+	            for (var i = 0; i < type.length; i++) {
+	                interact.on(type[i], listener, useCapture);
+	            }
+
+	            return interact;
+	        }
+
+	        if (isObject(type)) {
+	            for (var prop in type) {
+	                interact.on(prop, type[prop], listener);
+	            }
+
+	            return interact;
+	        }
+
+	        // if it is an InteractEvent type, add listener to globalEvents
+	        if (contains(eventTypes, type)) {
+	            // if this type of event was never bound
+	            if (!globalEvents[type]) {
+	                globalEvents[type] = [listener];
+	            }
+	            else {
+	                globalEvents[type].push(listener);
+	            }
+	        }
+	        // If non InteractEvent type, addEventListener to document
+	        else {
+	            events.add(document, type, listener, useCapture);
+	        }
+
+	        return interact;
+	    };
+
+	    /*\
+	     * interact.off
+	     [ method ]
+	     *
+	     * Removes a global InteractEvent listener or DOM event from `document`
+	     *
+	     - type       (string | array | object) The types of events that were listened for
+	     - listener   (function) The listener function to be removed
+	     - useCapture (boolean) #optional useCapture flag for removeEventListener
+	     = (object) interact
+	     \*/
+	    interact.off = function (type, listener, useCapture) {
+	        if (isString(type) && type.search(' ') !== -1) {
+	            type = type.trim().split(/ +/);
+	        }
+
+	        if (isArray(type)) {
+	            for (var i = 0; i < type.length; i++) {
+	                interact.off(type[i], listener, useCapture);
+	            }
+
+	            return interact;
+	        }
+
+	        if (isObject(type)) {
+	            for (var prop in type) {
+	                interact.off(prop, type[prop], listener);
+	            }
+
+	            return interact;
+	        }
+
+	        if (!contains(eventTypes, type)) {
+	            events.remove(document, type, listener, useCapture);
+	        }
+	        else {
+	            var index;
+
+	            if (type in globalEvents
+	                && (index = indexOf(globalEvents[type], listener)) !== -1) {
+	                globalEvents[type].splice(index, 1);
+	            }
+	        }
+
+	        return interact;
+	    };
+
+	    /*\
+	     * interact.enableDragging
+	     [ method ]
+	     *
+	     * Deprecated.
+	     *
+	     * Returns or sets whether dragging is enabled for any Interactables
+	     *
+	     - newValue (boolean) #optional `true` to allow the action; `false` to disable action for all Interactables
+	     = (boolean | object) The current setting or interact
+	    \*/
+	    interact.enableDragging = warnOnce(function (newValue) {
+	        if (newValue !== null && newValue !== undefined) {
+	            actionIsEnabled.drag = newValue;
+
+	            return interact;
+	        }
+	        return actionIsEnabled.drag;
+	    }, 'interact.enableDragging is deprecated and will soon be removed.');
+
+	    /*\
+	     * interact.enableResizing
+	     [ method ]
+	     *
+	     * Deprecated.
+	     *
+	     * Returns or sets whether resizing is enabled for any Interactables
+	     *
+	     - newValue (boolean) #optional `true` to allow the action; `false` to disable action for all Interactables
+	     = (boolean | object) The current setting or interact
+	    \*/
+	    interact.enableResizing = warnOnce(function (newValue) {
+	        if (newValue !== null && newValue !== undefined) {
+	            actionIsEnabled.resize = newValue;
+
+	            return interact;
+	        }
+	        return actionIsEnabled.resize;
+	    }, 'interact.enableResizing is deprecated and will soon be removed.');
+
+	    /*\
+	     * interact.enableGesturing
+	     [ method ]
+	     *
+	     * Deprecated.
+	     *
+	     * Returns or sets whether gesturing is enabled for any Interactables
+	     *
+	     - newValue (boolean) #optional `true` to allow the action; `false` to disable action for all Interactables
+	     = (boolean | object) The current setting or interact
+	    \*/
+	    interact.enableGesturing = warnOnce(function (newValue) {
+	        if (newValue !== null && newValue !== undefined) {
+	            actionIsEnabled.gesture = newValue;
+
+	            return interact;
+	        }
+	        return actionIsEnabled.gesture;
+	    }, 'interact.enableGesturing is deprecated and will soon be removed.');
+
+	    interact.eventTypes = eventTypes;
+
+	    /*\
+	     * interact.debug
+	     [ method ]
+	     *
+	     * Returns debugging data
+	     = (object) An object with properties that outline the current state and expose internal functions and variables
+	    \*/
+	    interact.debug = function () {
+	        var interaction = interactions[0] || new Interaction();
+
+	        return {
+	            interactions          : interactions,
+	            target                : interaction.target,
+	            dragging              : interaction.dragging,
+	            resizing              : interaction.resizing,
+	            gesturing             : interaction.gesturing,
+	            prepared              : interaction.prepared,
+	            matches               : interaction.matches,
+	            matchElements         : interaction.matchElements,
+
+	            prevCoords            : interaction.prevCoords,
+	            startCoords           : interaction.startCoords,
+
+	            pointerIds            : interaction.pointerIds,
+	            pointers              : interaction.pointers,
+	            addPointer            : listeners.addPointer,
+	            removePointer         : listeners.removePointer,
+	            recordPointer        : listeners.recordPointer,
+
+	            snap                  : interaction.snapStatus,
+	            restrict              : interaction.restrictStatus,
+	            inertia               : interaction.inertiaStatus,
+
+	            downTime              : interaction.downTimes[0],
+	            downEvent             : interaction.downEvent,
+	            downPointer           : interaction.downPointer,
+	            prevEvent             : interaction.prevEvent,
+
+	            Interactable          : Interactable,
+	            interactables         : interactables,
+	            pointerIsDown         : interaction.pointerIsDown,
+	            defaultOptions        : defaultOptions,
+	            defaultActionChecker  : defaultActionChecker,
+
+	            actionCursors         : actionCursors,
+	            dragMove              : listeners.dragMove,
+	            resizeMove            : listeners.resizeMove,
+	            gestureMove           : listeners.gestureMove,
+	            pointerUp             : listeners.pointerUp,
+	            pointerDown           : listeners.pointerDown,
+	            pointerMove           : listeners.pointerMove,
+	            pointerHover          : listeners.pointerHover,
+
+	            eventTypes            : eventTypes,
+
+	            events                : events,
+	            globalEvents          : globalEvents,
+	            delegatedEvents       : delegatedEvents,
+
+	            prefixedPropREs       : prefixedPropREs
+	        };
+	    };
+
+	    // expose the functions used to calculate multi-touch properties
+	    interact.getPointerAverage = pointerAverage;
+	    interact.getTouchBBox     = touchBBox;
+	    interact.getTouchDistance = touchDistance;
+	    interact.getTouchAngle    = touchAngle;
+
+	    interact.getElementRect         = getElementRect;
+	    interact.getElementClientRect   = getElementClientRect;
+	    interact.matchesSelector        = matchesSelector;
+	    interact.closest                = closest;
+
+	    /*\
+	     * interact.margin
+	     [ method ]
+	     *
+	     * Deprecated. Use `interact(target).resizable({ margin: number });` instead.
+	     * Returns or sets the margin for autocheck resizing used in
+	     * @Interactable.getAction. That is the distance from the bottom and right
+	     * edges of an element clicking in which will start resizing
+	     *
+	     - newValue (number) #optional
+	     = (number | interact) The current margin value or interact
+	    \*/
+	    interact.margin = warnOnce(function (newvalue) {
+	        if (isNumber(newvalue)) {
+	            margin = newvalue;
+
+	            return interact;
+	        }
+	        return margin;
+	    },
+	    'interact.margin is deprecated. Use interact(target).resizable({ margin: number }); instead.') ;
+
+	    /*\
+	     * interact.supportsTouch
+	     [ method ]
+	     *
+	     = (boolean) Whether or not the browser supports touch input
+	    \*/
+	    interact.supportsTouch = function () {
+	        return supportsTouch;
+	    };
+
+	    /*\
+	     * interact.supportsPointerEvent
+	     [ method ]
+	     *
+	     = (boolean) Whether or not the browser supports PointerEvents
+	    \*/
+	    interact.supportsPointerEvent = function () {
+	        return supportsPointerEvent;
+	    };
+
+	    /*\
+	     * interact.stop
+	     [ method ]
+	     *
+	     * Cancels all interactions (end events are not fired)
+	     *
+	     - event (Event) An event on which to call preventDefault()
+	     = (object) interact
+	    \*/
+	    interact.stop = function (event) {
+	        for (var i = interactions.length - 1; i >= 0; i--) {
+	            interactions[i].stop(event);
+	        }
+
+	        return interact;
+	    };
+
+	    /*\
+	     * interact.dynamicDrop
+	     [ method ]
+	     *
+	     * Returns or sets whether the dimensions of dropzone elements are
+	     * calculated on every dragmove or only on dragstart for the default
+	     * dropChecker
+	     *
+	     - newValue (boolean) #optional True to check on each move. False to check only before start
+	     = (boolean | interact) The current setting or interact
+	    \*/
+	    interact.dynamicDrop = function (newValue) {
+	        if (isBool(newValue)) {
+	            //if (dragging && dynamicDrop !== newValue && !newValue) {
+	                //calcRects(dropzones);
+	            //}
+
+	            dynamicDrop = newValue;
+
+	            return interact;
+	        }
+	        return dynamicDrop;
+	    };
+
+	    /*\
+	     * interact.pointerMoveTolerance
+	     [ method ]
+	     * Returns or sets the distance the pointer must be moved before an action
+	     * sequence occurs. This also affects tolerance for tap events.
+	     *
+	     - newValue (number) #optional The movement from the start position must be greater than this value
+	     = (number | Interactable) The current setting or interact
+	    \*/
+	    interact.pointerMoveTolerance = function (newValue) {
+	        if (isNumber(newValue)) {
+	            pointerMoveTolerance = newValue;
+
+	            return this;
+	        }
+
+	        return pointerMoveTolerance;
+	    };
+
+	    /*\
+	     * interact.maxInteractions
+	     [ method ]
+	     **
+	     * Returns or sets the maximum number of concurrent interactions allowed.
+	     * By default only 1 interaction is allowed at a time (for backwards
+	     * compatibility). To allow multiple interactions on the same Interactables
+	     * and elements, you need to enable it in the draggable, resizable and
+	     * gesturable `'max'` and `'maxPerElement'` options.
+	     **
+	     - newValue (number) #optional Any number. newValue <= 0 means no interactions.
+	    \*/
+	    interact.maxInteractions = function (newValue) {
+	        if (isNumber(newValue)) {
+	            maxInteractions = newValue;
+
+	            return this;
+	        }
+
+	        return maxInteractions;
+	    };
+
+	    interact.createSnapGrid = function (grid) {
+	        return function (x, y) {
+	            var offsetX = 0,
+	                offsetY = 0;
+
+	            if (isObject(grid.offset)) {
+	                offsetX = grid.offset.x;
+	                offsetY = grid.offset.y;
+	            }
+
+	            var gridx = Math.round((x - offsetX) / grid.x),
+	                gridy = Math.round((y - offsetY) / grid.y),
+
+	                newX = gridx * grid.x + offsetX,
+	                newY = gridy * grid.y + offsetY;
+
+	            return {
+	                x: newX,
+	                y: newY,
+	                range: grid.range
+	            };
+	        };
+	    };
+
+	    function endAllInteractions (event) {
+	        for (var i = 0; i < interactions.length; i++) {
+	            interactions[i].pointerEnd(event, event);
+	        }
+	    }
+
+	    function listenToDocument (doc) {
+	        if (contains(documents, doc)) { return; }
+
+	        var win = doc.defaultView || doc.parentWindow;
+
+	        // add delegate event listener
+	        for (var eventType in delegatedEvents) {
+	            events.add(doc, eventType, delegateListener);
+	            events.add(doc, eventType, delegateUseCapture, true);
+	        }
+
+	        if (supportsPointerEvent) {
+	            if (PointerEvent === win.MSPointerEvent) {
+	                pEventTypes = {
+	                    up: 'MSPointerUp', down: 'MSPointerDown', over: 'mouseover',
+	                    out: 'mouseout', move: 'MSPointerMove', cancel: 'MSPointerCancel' };
+	            }
+	            else {
+	                pEventTypes = {
+	                    up: 'pointerup', down: 'pointerdown', over: 'pointerover',
+	                    out: 'pointerout', move: 'pointermove', cancel: 'pointercancel' };
+	            }
+
+	            events.add(doc, pEventTypes.down  , listeners.selectorDown );
+	            events.add(doc, pEventTypes.move  , listeners.pointerMove  );
+	            events.add(doc, pEventTypes.over  , listeners.pointerOver  );
+	            events.add(doc, pEventTypes.out   , listeners.pointerOut   );
+	            events.add(doc, pEventTypes.up    , listeners.pointerUp    );
+	            events.add(doc, pEventTypes.cancel, listeners.pointerCancel);
+
+	            // autoscroll
+	            events.add(doc, pEventTypes.move, listeners.autoScrollMove);
+	        }
+	        else {
+	            events.add(doc, 'mousedown', listeners.selectorDown);
+	            events.add(doc, 'mousemove', listeners.pointerMove );
+	            events.add(doc, 'mouseup'  , listeners.pointerUp   );
+	            events.add(doc, 'mouseover', listeners.pointerOver );
+	            events.add(doc, 'mouseout' , listeners.pointerOut  );
+
+	            events.add(doc, 'touchstart' , listeners.selectorDown );
+	            events.add(doc, 'touchmove'  , listeners.pointerMove  );
+	            events.add(doc, 'touchend'   , listeners.pointerUp    );
+	            events.add(doc, 'touchcancel', listeners.pointerCancel);
+
+	            // autoscroll
+	            events.add(doc, 'mousemove', listeners.autoScrollMove);
+	            events.add(doc, 'touchmove', listeners.autoScrollMove);
+	        }
+
+	        events.add(win, 'blur', endAllInteractions);
+
+	        try {
+	            if (win.frameElement) {
+	                var parentDoc = win.frameElement.ownerDocument,
+	                    parentWindow = parentDoc.defaultView;
+
+	                events.add(parentDoc   , 'mouseup'      , listeners.pointerEnd);
+	                events.add(parentDoc   , 'touchend'     , listeners.pointerEnd);
+	                events.add(parentDoc   , 'touchcancel'  , listeners.pointerEnd);
+	                events.add(parentDoc   , 'pointerup'    , listeners.pointerEnd);
+	                events.add(parentDoc   , 'MSPointerUp'  , listeners.pointerEnd);
+	                events.add(parentWindow, 'blur'         , endAllInteractions );
+	            }
+	        }
+	        catch (error) {
+	            interact.windowParentError = error;
+	        }
+
+	        // prevent native HTML5 drag on interact.js target elements
+	        events.add(doc, 'dragstart', function (event) {
+	            for (var i = 0; i < interactions.length; i++) {
+	                var interaction = interactions[i];
+
+	                if (interaction.element
+	                    && (interaction.element === event.target
+	                        || nodeContains(interaction.element, event.target))) {
+
+	                    interaction.checkAndPreventDefault(event, interaction.target, interaction.element);
+	                    return;
+	                }
+	            }
+	        });
+
+	        if (events.useAttachEvent) {
+	            // For IE's lack of Event#preventDefault
+	            events.add(doc, 'selectstart', function (event) {
+	                var interaction = interactions[0];
+
+	                if (interaction.currentAction()) {
+	                    interaction.checkAndPreventDefault(event);
+	                }
+	            });
+
+	            // For IE's bad dblclick event sequence
+	            events.add(doc, 'dblclick', doOnInteractions('ie8Dblclick'));
+	        }
+
+	        documents.push(doc);
+	    }
+
+	    listenToDocument(document);
+
+	    function indexOf (array, target) {
+	        for (var i = 0, len = array.length; i < len; i++) {
+	            if (array[i] === target) {
+	                return i;
+	            }
+	        }
+
+	        return -1;
+	    }
+
+	    function contains (array, target) {
+	        return indexOf(array, target) !== -1;
+	    }
+
+	    function matchesSelector (element, selector, nodeList) {
+	        if (ie8MatchesSelector) {
+	            return ie8MatchesSelector(element, selector, nodeList);
+	        }
+
+	        // remove /deep/ from selectors if shadowDOM polyfill is used
+	        if (window !== realWindow) {
+	            selector = selector.replace(/\/deep\//g, ' ');
+	        }
+
+	        return element[prefixedMatchesSelector](selector);
+	    }
+
+	    function matchesUpTo (element, selector, limit) {
+	        while (isElement(element)) {
+	            if (matchesSelector(element, selector)) {
+	                return true;
+	            }
+
+	            element = parentElement(element);
+
+	            if (element === limit) {
+	                return matchesSelector(element, selector);
+	            }
+	        }
+
+	        return false;
+	    }
+
+	    // For IE8's lack of an Element#matchesSelector
+	    // taken from http://tanalin.com/en/blog/2012/12/matches-selector-ie8/ and modified
+	    if (!(prefixedMatchesSelector in Element.prototype) || !isFunction(Element.prototype[prefixedMatchesSelector])) {
+	        ie8MatchesSelector = function (element, selector, elems) {
+	            elems = elems || element.parentNode.querySelectorAll(selector);
+
+	            for (var i = 0, len = elems.length; i < len; i++) {
+	                if (elems[i] === element) {
+	                    return true;
+	                }
+	            }
+
+	            return false;
+	        };
+	    }
+
+	    // requestAnimationFrame polyfill
+	    (function() {
+	        var lastTime = 0,
+	            vendors = ['ms', 'moz', 'webkit', 'o'];
+
+	        for(var x = 0; x < vendors.length && !realWindow.requestAnimationFrame; ++x) {
+	            reqFrame = realWindow[vendors[x]+'RequestAnimationFrame'];
+	            cancelFrame = realWindow[vendors[x]+'CancelAnimationFrame'] || realWindow[vendors[x]+'CancelRequestAnimationFrame'];
+	        }
+
+	        if (!reqFrame) {
+	            reqFrame = function(callback) {
+	                var currTime = new Date().getTime(),
+	                    timeToCall = Math.max(0, 16 - (currTime - lastTime)),
+	                    id = setTimeout(function() { callback(currTime + timeToCall); },
+	                  timeToCall);
+	                lastTime = currTime + timeToCall;
+	                return id;
+	            };
+	        }
+
+	        if (!cancelFrame) {
+	            cancelFrame = function(id) {
+	                clearTimeout(id);
+	            };
+	        }
+	    }());
+
+	    /* global exports: true, module, define */
+
+	    // http://documentcloud.github.io/underscore/docs/underscore.html#section-11
+	    if (true) {
+	        if (typeof module !== 'undefined' && module.exports) {
+	            exports = module.exports = interact;
+	        }
+	        exports.interact = interact;
+	    }
+	    // AMD
+	    else if (typeof define === 'function' && define.amd) {
+	        define('interact', function() {
+	            return interact;
+	        });
+	    }
+	    else {
+	        realWindow.interact = interact;
+	    }
+
+	} (typeof window === 'undefined'? undefined : window));
+
+
+/***/ },
+/* 580 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _react = __webpack_require__(299);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _Post = __webpack_require__(578);
+
+	var _Post2 = _interopRequireDefault(_Post);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var PostList = function (_React$Component) {
+	    _inherits(PostList, _React$Component);
+
+	    function PostList(props) {
+	        _classCallCheck(this, PostList);
+
+	        return _possibleConstructorReturn(this, (PostList.__proto__ || Object.getPrototypeOf(PostList)).call(this, props));
+	    }
+
+	    _createClass(PostList, [{
+	        key: 'shouldComponentUpdate',
+	        value: function shouldComponentUpdate(nextProps, nextState) {
+	            return JSON.stringify(nextProps) !== JSON.stringify(this.props);
+	        }
+	    }, {
+	        key: 'render',
+	        value: function render() {
+	            var _this2 = this;
+
+	            var dataToComponent = function dataToComponent(postlist) {
+	                if (postlist && Array.isArray(postlist)) {
+	                    return postlist.map(function (post, i) {
+	                        return _react2.default.createElement(_Post2.default, {
+	                            post: post,
+	                            key: post.id,
+	                            index: i,
+	                            ownership: _this2.props.currentUser ? post.writer.id === _this2.props.currentUser.id : false,
+	                            onPostMove: _this2.props.onPostMove,
+	                            onPostRemove: _this2.props.onPostRemove,
+	                            onPostModify: _this2.props.onPostModify
+	                        });
+	                    });
+	                } else return null;
+	            };
+	            return _react2.default.createElement(
+	                'div',
+	                { className: 'post_list' },
+	                dataToComponent(this.props.list)
+	            );
+	        }
+	    }]);
+
+	    return PostList;
+	}(_react2.default.Component);
+
+	exports.default = PostList;
 
 /***/ },
 /* 581 */
@@ -38396,22 +44586,86 @@
 	    value: true
 	});
 
-	var _account = __webpack_require__(582);
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _account2 = _interopRequireDefault(_account);
+	var _react = __webpack_require__(299);
 
-	var _post = __webpack_require__(585);
-
-	var _post2 = _interopRequireDefault(_post);
-
-	var _redux = __webpack_require__(543);
+	var _react2 = _interopRequireDefault(_react);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	exports.default = (0, _redux.combineReducers)({
-	    account: _account2.default,
-	    post: _post2.default
-	});
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var WritePost = function (_React$Component) {
+	    _inherits(WritePost, _React$Component);
+
+	    function WritePost(props) {
+	        _classCallCheck(this, WritePost);
+
+	        var _this = _possibleConstructorReturn(this, (WritePost.__proto__ || Object.getPrototypeOf(WritePost)).call(this, props));
+
+	        _this.state = {
+	            content: '',
+	            style: _this.props.style
+	        };
+	        _this.handleClick = _this.handleClick.bind(_this);
+	        _this.handleChange = _this.handleChange.bind(_this);
+
+	        return _this;
+	    }
+
+	    _createClass(WritePost, [{
+	        key: 'componentDidMount',
+	        value: function componentDidMount() {
+	            this.textarea.focus();
+	        }
+	    }, {
+	        key: 'handleClick',
+	        value: function handleClick() {
+	            var coords = this.textarea.getBoundingClientRect();
+	            return this.props.handleWrite(this.state, coords.left, coords.top);
+	        }
+	    }, {
+	        key: 'handleChange',
+	        value: function handleChange(e) {
+	            var nextState = {};
+	            nextState[e.target.name] = e.target.value;
+	            this.setState(nextState);
+	            e.target.style.cssText = 'height:auto; padding:0';
+	            e.target.style.cssText = 'height:' + e.target.scrollHeight + 'px';
+	        }
+	    }, {
+	        key: 'render',
+	        value: function render() {
+	            var _this2 = this;
+
+	            return _react2.default.createElement(
+	                'div',
+	                { className: 'writepost', style: this.props.style },
+	                _react2.default.createElement(
+	                    'div',
+	                    null,
+	                    _react2.default.createElement('textarea', { ref: function ref(textarea) {
+	                            _this2.textarea = textarea;
+	                        }, onChange: this.handleChange, value: this.state.content, name: 'content', placeholder: '\uB0B4\uC6A9' })
+	                ),
+	                _react2.default.createElement(
+	                    'button',
+	                    { onClick: this.handleClick },
+	                    '\uAE00\uC4F0\uAE30'
+	                )
+	            );
+	        }
+	    }]);
+
+	    return WritePost;
+	}(_react2.default.Component);
+
+	exports.default = WritePost;
 
 /***/ },
 /* 582 */
@@ -38422,13 +44676,204 @@
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _react = __webpack_require__(299);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _components = __webpack_require__(576);
+
+	var _post = __webpack_require__(575);
+
+	var _reactRedux = __webpack_require__(538);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var Home = function (_React$Component) {
+	    _inherits(Home, _React$Component);
+
+	    function Home(props) {
+	        _classCallCheck(this, Home);
+
+	        var _this = _possibleConstructorReturn(this, (Home.__proto__ || Object.getPrototypeOf(Home)).call(this, props));
+
+	        _this.handleModify = _this.handleModify.bind(_this);
+	        _this.handleModifyCoords = _this.handleModifyCoords.bind(_this);
+	        _this.handleRemove = _this.handleRemove.bind(_this);
+	        return _this;
+	    }
+
+	    _createClass(Home, [{
+	        key: 'componentWillMount',
+	        value: function componentWillMount() {
+	            this.props.loadListRequest();
+	        }
+	    }, {
+	        key: 'handleModify',
+	        value: function handleModify(post) {
+	            var _this2 = this;
+
+	            var request = {
+	                mode: 'content',
+	                index: post.index,
+	                body: {
+	                    id: post.id,
+	                    content: post.content
+	                }
+	            };
+	            return this.props.modifyRequest(request).then(function () {
+	                if (_this2.props.modify.status === 'SUCCESS') {
+	                    return true;
+	                } else {
+	                    $.notify('수정 에러');
+	                    return false;
+	                }
+	            });
+	        }
+	    }, {
+	        key: 'handleModifyCoords',
+	        value: function handleModifyCoords(post) {
+	            var _this3 = this;
+
+	            var request = {
+	                mode: 'coords',
+	                index: post.index,
+	                body: {
+	                    id: post.id,
+	                    coords: post.coords
+	                }
+	            };
+	            return this.props.modifyRequest(request).then(function () {
+	                if (_this3.props.modify.status === 'SUCCESS') {
+	                    return true;
+	                } else {
+	                    $.notify('수정 에러');
+	                    return false;
+	                }
+	            });
+	        }
+	    }, {
+	        key: 'handleRemove',
+	        value: function handleRemove(post) {
+	            var _this4 = this;
+
+	            var request = {
+	                index: post.index,
+	                body: {
+	                    id: post.id
+	                }
+	            };
+	            return this.props.removeRequest(request).then(function () {
+	                if (_this4.props.remove.status === 'SUCCESS') {
+	                    return true;
+	                } else {
+	                    $.notify('삭제 에러');
+	                    return false;
+	                }
+	            });
+	        }
+	    }, {
+	        key: 'render',
+	        value: function render() {
+	            return _react2.default.createElement(
+	                'div',
+	                { className: 'home' },
+	                _react2.default.createElement(_components.PostList, { onPostMove: this.handleModifyCoords, onPostRemove: this.handleRemove, onPostModify: this.handleModify, list: this.props.loadList.list, currentUser: this.props.session.currentUser })
+	            );
+	        }
+	    }]);
+
+	    return Home;
+	}(_react2.default.Component);
+
+	var mapStateToProps = function mapStateToProps(state) {
+
+	    return {
+	        session: {
+	            currentUser: state.account.session.currentUser
+	        },
+	        loadList: {
+	            status: state.post.loadList.status,
+	            list: state.post.loadList.list
+	        },
+	        modify: {
+	            status: state.post.modify.status
+	        },
+	        remove: {
+	            status: state.post.remove.status
+	        }
+	    };
+	};
+	var mapDispatchToProps = function mapDispatchToProps(dispatch) {
+	    return {
+	        loadListRequest: function loadListRequest() {
+	            console.log('loadListRequest called');
+	            return dispatch((0, _post.loadListRequest)());
+	        },
+	        modifyRequest: function modifyRequest(request) {
+	            console.log('modifyRequest called');
+	            return dispatch((0, _post.modifyRequest)(request));
+	        },
+	        removeRequest: function removeRequest(request) {
+	            console.log('removeRequest called');
+	            return dispatch((0, _post.removeRequest)(request));
+	        }
+	    };
+	};
+
+	exports.default = (0, _reactRedux.connect)(mapStateToProps, mapDispatchToProps)(Home);
+
+/***/ },
+/* 583 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _account = __webpack_require__(584);
+
+	var _account2 = _interopRequireDefault(_account);
+
+	var _post = __webpack_require__(587);
+
+	var _post2 = _interopRequireDefault(_post);
+
+	var _redux = __webpack_require__(547);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	exports.default = (0, _redux.combineReducers)({
+	    account: _account2.default,
+	    post: _post2.default
+	});
+
+/***/ },
+/* 584 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
 	exports.default = account;
 
-	var _actions = __webpack_require__(533);
+	var _actions = __webpack_require__(537);
 
 	var types = _interopRequireWildcard(_actions);
 
-	var _reactAddonsUpdate = __webpack_require__(583);
+	var _reactAddonsUpdate = __webpack_require__(585);
 
 	var _reactAddonsUpdate2 = _interopRequireDefault(_reactAddonsUpdate);
 
@@ -38437,21 +44882,12 @@
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 	var initialState = {
-	    login: {
-	        status: 'INIT'
-	    },
 	    signup: {
 	        status: 'INIT'
 	    },
 	    session: {
 	        status: 'INIT',
-	        currentUser: ''
-	    },
-	    logout: {
-	        status: 'INIT'
-	    },
-	    remove: {
-	        status: 'INIT'
+	        currentUser: null
 	    }
 	};
 
@@ -38460,24 +44896,6 @@
 	    var action = arguments[1];
 
 	    switch (action.type) {
-	        case types.ACCOUNT_LOGIN:
-	            return (0, _reactAddonsUpdate2.default)(state, {
-	                login: {
-	                    status: { $set: 'WAITING' }
-	                }
-	            });
-	        case types.ACCOUNT_LOGIN_SUCCESS:
-	            return (0, _reactAddonsUpdate2.default)(state, {
-	                login: {
-	                    status: { $set: 'SUCCESS' }
-	                }
-	            });
-	        case types.ACCOUNT_LOGIN_FAILURE:
-	            return (0, _reactAddonsUpdate2.default)(state, {
-	                login: {
-	                    status: { $set: 'FAILURE' }
-	                }
-	            });
 	        case types.ACCOUNT_SIGNUP:
 	            return (0, _reactAddonsUpdate2.default)(state, {
 	                signup: {
@@ -38516,58 +44934,19 @@
 	                    currentUser: { $set: undefined }
 	                }
 	            });
-	        case types.ACCOUNT_LOGOUT:
-	            return (0, _reactAddonsUpdate2.default)(state, {
-	                logout: {
-	                    status: { $set: 'WAITING' }
-	                }
-	            });
-	        case types.ACCOUNT_LOGOUT_SUCCESS:
-	            return (0, _reactAddonsUpdate2.default)(state, {
-	                logout: {
-	                    status: { $set: 'SUCCESS' }
-	                }
-	            });
-	        case types.ACCOUNT_LOGOUT_FAILURE:
-	            return (0, _reactAddonsUpdate2.default)(state, {
-	                logout: {
-	                    status: { $set: 'FAILURE' }
-	                }
-	            });
-	        case types.ACCOUNT_REMOVE:
-	            return (0, _reactAddonsUpdate2.default)(state, {
-	                remove: {
-	                    status: { $set: 'WAITING' }
-	                }
-	            });
-	        case types.ACCOUNT_REMOVE_SUCCESS:
-	            return (0, _reactAddonsUpdate2.default)(state, {
-	                session: {
-	                    currentUser: { $set: undefined }
-	                },
-	                remove: {
-	                    status: { $set: 'SUCCESS' }
-	                }
-	            });
-	        case types.ACCOUNT_REMOVE_FAILURE:
-	            return (0, _reactAddonsUpdate2.default)(state, {
-	                remove: {
-	                    status: { $set: 'FAILURE' }
-	                }
-	            });
 	        default:
 	            return state;
 	    }
 	};
 
 /***/ },
-/* 583 */
+/* 585 */
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__(584);
+	module.exports = __webpack_require__(586);
 
 /***/ },
-/* 584 */
+/* 586 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -38684,7 +45063,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(294)))
 
 /***/ },
-/* 585 */
+/* 587 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -38694,11 +45073,11 @@
 	});
 	exports.default = post;
 
-	var _actions = __webpack_require__(533);
+	var _actions = __webpack_require__(537);
 
 	var types = _interopRequireWildcard(_actions);
 
-	var _reactAddonsUpdate = __webpack_require__(583);
+	var _reactAddonsUpdate = __webpack_require__(585);
 
 	var _reactAddonsUpdate2 = _interopRequireDefault(_reactAddonsUpdate);
 
@@ -38706,18 +45085,20 @@
 
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
+	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 	var initialState = {
 	    loadList: {
 	        status: 'INIT',
-	        list: []
+	        list: null
 	    },
-	    /*
-	    load : {
-	        status : 'INIT'
-	    },*/
+	    load: {
+	        status: 'INIT',
+	        post: null
+	    },
 	    write: {
 	        status: 'INIT',
-	        _id: undefined
+	        id: null
 	    },
 	    modify: {
 	        status: 'INIT'
@@ -38751,6 +45132,25 @@
 	                    status: { $set: 'FAILURE' }
 	                }
 	            });
+	        case types.POST_LOAD:
+	            return (0, _reactAddonsUpdate2.default)(state, {
+	                load: {
+	                    status: { $set: 'WAITING' }
+	                }
+	            });
+	        case types.POST_LOAD_SUCCESS:
+	            return (0, _reactAddonsUpdate2.default)(state, {
+	                load: {
+	                    status: { $set: 'SUCCESS' },
+	                    post: { $set: action.post }
+	                }
+	            });
+	        case types.POST_LOAD_FAILURE:
+	            return (0, _reactAddonsUpdate2.default)(state, {
+	                load: {
+	                    status: { $set: 'FAILURE' }
+	                }
+	            });
 	        case types.POST_WRITE:
 	            return (0, _reactAddonsUpdate2.default)(state, {
 	                write: {
@@ -38761,7 +45161,12 @@
 	            return (0, _reactAddonsUpdate2.default)(state, {
 	                write: {
 	                    status: { $set: 'SUCCESS' },
-	                    _id: { $set: action._id }
+	                    id: { $set: action.post.id }
+	                },
+	                loadList: {
+	                    list: {
+	                        $push: [action.post]
+	                    }
 	                }
 	            });
 	        case types.POST_WRITE_FAILURE:
@@ -38780,6 +45185,9 @@
 	            return (0, _reactAddonsUpdate2.default)(state, {
 	                modify: {
 	                    status: { $set: 'SUCCESS' }
+	                },
+	                loadList: {
+	                    list: _defineProperty({}, action.index, { $merge: action.post })
 	                }
 	            });
 	        case types.POST_MODIFY_FAILURE:
@@ -38798,6 +45206,11 @@
 	            return (0, _reactAddonsUpdate2.default)(state, {
 	                remove: {
 	                    status: { $set: 'SUCCESS' }
+	                },
+	                loadList: {
+	                    list: {
+	                        $splice: [[action.index, 1]]
+	                    }
 	                }
 	            });
 	        case types.POST_REMOVE_FAILURE:
@@ -38812,7 +45225,7 @@
 	};
 
 /***/ },
-/* 586 */
+/* 588 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -38840,16 +45253,16 @@
 	exports['default'] = thunk;
 
 /***/ },
-/* 587 */
+/* 589 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 
 	// load the styles
-	var content = __webpack_require__(588);
+	var content = __webpack_require__(590);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(590)(content, {});
+	var update = __webpack_require__(592)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -38866,21 +45279,21 @@
 	}
 
 /***/ },
-/* 588 */
+/* 590 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(589)();
+	exports = module.exports = __webpack_require__(591)();
 	// imports
 
 
 	// module
-	exports.push([module.id, "body {\r\n    margin:0px;\r\n}\r\n* {\r\n    box-sizing: border-box;\r\n}\r\n.home_half {\r\n    float: left;\r\n    padding: 15px;\r\n    width: 50%;\r\n}\r\n.header {\r\n    text-align: center;\r\n    padding:30px\r\n}\r\ntextarea{\r\n    width:100%;\r\n    resize: none;\r\n}\r\nli {\r\n    list-style: none;\r\n}\r\nli:hover {\r\n    cursor:pointer;\r\n    color:blue;\r\n}\r\n.li_mine {\r\n    color:red;\r\n}\r\n.header_inputs{\r\n    width:100px;\r\n    height:20px;\r\n}\r\n\r\n\r\n#header_user:hover {\r\n    cursor: pointer;\r\n    color:red;\r\n}\r\n\r\n#post_title{\r\n\r\n}\r\n\r\n.draggable {\r\n\r\n    -webkit-transform: translate(0px, 0px);\r\n    transform: translate(0px, 0px);\r\n    -ms-touch-action: none;\r\n    touch-action: none;\r\n}", ""]);
+	exports.push([module.id, "::-webkit-input-placeholder {\r\n    text-align: center;\r\n}\r\n\r\n:-moz-placeholder { /* Firefox 18- */\r\n    text-align: center;\r\n}\r\n\r\n::-moz-placeholder {  /* Firefox 19+ */\r\n    text-align: center;\r\n}\r\n\r\n:-ms-input-placeholder {\r\n    text-align: center;\r\n}\r\n\r\nbody {\r\n    margin:0;\r\n}\r\n* {\r\n    box-sizing: border-box;\r\n}\r\n.home_half {\r\n    float: left;\r\n    padding: 15px;\r\n    width: 50%;\r\n}\r\n.header {\r\n    width:100%;\r\n    left: 0;\r\n    right: 0;\r\n    position : fixed;\r\n    text-align: center;\r\n    padding:10px;\r\n    margin : auto;\r\n\r\n}\r\n.header a {\r\n    cursor: pointer;\r\n}\r\n.header .writepost_button {\r\n}\r\n.header .username {\r\n    position:fixed;\r\n    right:0\r\n}\r\ntextarea {\r\n    width : 200px;\r\n    height:auto;\r\n    padding:0;\r\n    resize:none;\r\n    border:none;\r\n    outline:none;\r\n    -webkit-box-shadow:none;\r\n    -moz-box-shadow:none;\r\n    box-shadow:none;\r\n    overflow-y:hidden;\r\n    font-size:1.2em;\r\n    background-color :transparent;\r\n}\r\n.writepost {\r\n\r\n}\r\n.writepost textarea{\r\n    padding : 5px;\r\n    text-align: left;\r\n    border-bottom : 1px solid white;\r\n    -webkit-box-shadow: none;\r\n    -moz-box-shadow: none;\r\n    box-shadow: none;\r\n\r\n    transition-duration: 0.5s;\r\n    -o-transition-duration: 0.5s;\r\n    -moz-transition-duration: 0.5s;\r\n    -webkit-transition-duration: 0.5s;\r\n}\r\n.writepost textarea:focus {\r\n    border-bottom : 1px solid black;\r\n}\r\n\r\n.writepost button {\r\n    background:none;\r\n    font-size:1em;\r\n    cursor: pointer;\r\n    border: 1px solid white;\r\n\r\n    transition-duration: 0.3s;\r\n    -o-transition-duration: 0.3s;\r\n    -moz-transition-duration: 0.3s;\r\n    -webkit-transition-duration: 0.3s;\r\n}\r\n.writepost button:hover {\r\n    border : 1px solid black;\r\n}\r\n\r\n\r\n.post {\r\n    display:inline-block;\r\n    position:absolute;\r\n    padding:2px;\r\n    border: 1px solid transparent;\r\n    cursor: pointer;\r\n}\r\n.post:hover {\r\n    border: 1px solid black;\r\n}\r\n.post:focus {\r\n    border: 1px solid black;\r\n}\r\n.post.mine {\r\n}\r\n.post.mine:hover {\r\n    border: 1px solid blue;\r\n}\r\n.post.notmine textarea {\r\n    cursor: pointer\r\n}\r\n.posthead .writer {\r\n    display: inline-block;\r\n}\r\n.posthead .delete {\r\n    display:inline-block;\r\n    float:right;\r\n}\r\n.posthead .delete:hover {\r\n    color:red\r\n}", ""]);
 
 	// exports
 
 
 /***/ },
-/* 589 */
+/* 591 */
 /***/ function(module, exports) {
 
 	/*
@@ -38936,7 +45349,7 @@
 
 
 /***/ },
-/* 590 */
+/* 592 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*

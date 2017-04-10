@@ -9,7 +9,6 @@ class App extends React.Component {
     }
     componentWillMount() {
         this.props.sessionRequest();
-
     }
     render() {
         return (

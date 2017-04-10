@@ -40,9 +40,12 @@ export function removeFailure(){}
 loadListRequest = () => {
     return (dispatch) => {
         dispatch(loadList());
-
         return fetch('/api/post/loadList', {
-            method : 'GET'
+            method : 'GET',
+            headers : {
+                'pragma' : 'no-cache',
+                'cache-control' : 'no-cache'
+            }
         })
             .then(res => res.json())
             .then(res => {
@@ -75,11 +78,29 @@ loadListFailure = () => {
     }
 };
 
-/*
-loadRequest = () => {
+
+loadRequest = (id) => {
     return (dispatch) => {
         dispatch(load());
-
+        return fetch('/api/post/load/'+id, {
+            method : 'GET',
+            headers : {
+                'pragma' : 'no-cache',
+                'cache-control' : 'no-cache'
+            }
+        })
+            .then(res => res.json())
+            .then(res => {
+                if(res.success) {
+                    dispatch(loadSuccess(res.post));
+                } else {
+                    dispatch(loadFailure());
+                }
+            })
+            .catch((error) => {
+                console.log(error);
+                dispatch(loadFailure());
+            });
 
     }
 };
@@ -99,26 +120,27 @@ loadFailure = () => {
         type : POST_LOAD_FAILURE
     }
 };
-*/
 
-writeRequest = (post) => {
+
+writeRequest = (request) => {
     return (dispatch) => {
         dispatch(write());
-
         return fetch('/api/post/write',{
             method : 'POST',
             headers : {'Content-Type' : 'application/json'},
             credentials : 'include',
-            body : JSON.stringify(post)
+            body : JSON.stringify(request.body)
         })
             .then(res => res.json())
             .then(res => {
                 if(res.success)
-                    dispatch(writeSuccess(res._id));
+                    dispatch(writeSuccess(res.post));
+
                 else
                     dispatch(writeFailure());
             })
-            .catch((error) => {
+            .catch((err) => {
+                console.log(err);
                 dispatch(writeFailure());
             });
     }
@@ -128,10 +150,10 @@ write = () => {
         type : POST_WRITE
     }
 };
-writeSuccess = (_id) => {
+writeSuccess = (post) => {
     return {
         type : POST_WRITE_SUCCESS,
-        _id
+        post : post
     }
 };
 writeFailure = () => {
@@ -140,20 +162,22 @@ writeFailure = () => {
     }
 };
 
-modifyRequest = (post) => {
+modifyRequest = (request) => {
     return (dispatch) => {
         dispatch(modify());
 
-        return fetch('/api/post/modify',{
+        let Fetch_Address = '/api/post/modify/'+request.mode;
+
+        return fetch(Fetch_Address,{
             method : 'PUT',
             headers : {'Content-Type' : 'application/json'},
             credentials : 'include',
-            body : JSON.stringify(post)
+            body : JSON.stringify(request.body)
         })
             .then(res => res.json())
             .then(res => {
                 if(res.success) {
-                    dispatch(modifySuccess());
+                    dispatch(modifySuccess(request.index, request.body));
                 } else {
                     dispatch(modifyFailure());
                 }
@@ -168,9 +192,11 @@ modify = () => {
         type : POST_MODIFY
     }
 };
-modifySuccess = () => {
+modifySuccess = (index, post) => {
     return {
-        type : POST_MODIFY_SUCCESS
+        type : POST_MODIFY_SUCCESS,
+        index : index,
+        post : post
     }
 };
 modifyFailure = () => {
@@ -179,7 +205,7 @@ modifyFailure = () => {
     }
 };
 
-removeRequest = (_id) => {
+removeRequest = (request) => {
     return (dispatch) => {
         dispatch(remove());
 
@@ -187,16 +213,17 @@ removeRequest = (_id) => {
             method : 'DELETE',
             headers : {'Content-Type' : 'application/json'},
             credentials : 'include',
-            body : JSON.stringify({_id})
+            body : JSON.stringify(request.body)
         })
             .then(res => res.json())
             .then(res => {
                if(res.success) {
-                   dispatch(removeSuccess());
+                   dispatch(removeSuccess(request.index));
                } else {
                    dispatch(removeFailure());
                }
             }).catch((error) => {
+                console.log(error);
                 dispatch(removeFailure());
             });
     }
@@ -206,8 +233,9 @@ remove = () => {
         type : POST_REMOVE
     }
 };
-removeSuccess = () => {
+removeSuccess = (index) => {
     return {
+        index : index,
         type : POST_REMOVE_SUCCESS
     }
 };
