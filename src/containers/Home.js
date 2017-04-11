@@ -1,5 +1,5 @@
 import React from 'react';
-import { PostList } from '../components';
+import { PostList, Chat} from '../components';
 import { loadListRequest, modifyRequest, removeRequest } from '../actions/post';
 import { connect } from 'react-redux';
 
@@ -77,6 +77,7 @@ class Home extends React.Component {
         return (
             <div className='home'>
                 <PostList onPostMove={this.handleModifyCoords} onPostRemove={this.handleRemove} onPostModify={this.handleModify} list={this.props.loadList.list} currentUser={this.props.session.currentUser}/>
+                <Chat/>
             </div>
         )
     }
