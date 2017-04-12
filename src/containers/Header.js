@@ -3,16 +3,19 @@ import { sessionRequest } from '../actions/account';
 import { writeRequest } from '../actions/post'
 import { connect } from 'react-redux';
 import { Header_User, WritePost} from '../components';
+import Chat from "../components/Chat";
 
 class Header extends React.Component{
     constructor(props) {
         super(props);
         this.state = {
-            write : false
+            write : false,
+            chat : false
         };
-
         this.handleWrite = this.handleWrite.bind(this);
-        this.handleClick = this.handleClick.bind(this);
+        this.WriteOpen = this.WriteOpen.bind(this);
+        this.ChatOpen = this.ChatOpen.bind(this);
+        this.handleChatRemove = this.handleChatRemove.bind(this);
     }
     handleWrite(post, x, y) {
         this.setState({write : !this.state.write});
@@ -36,15 +39,25 @@ class Header extends React.Component{
             }
         });
     }
-    handleClick() {
-        this.setState({write : !this.state.write});
+    WriteOpen() {
+        this.setState({write:!this.state.write});
+    }
+    ChatOpen() {
+        this.setState({chat:!this.state.chat});
+    }
+    handleChatRemove() {
+        this.setState({chat:!this.state.chat});
     }
     render() {
         return (
             <div className = 'header'>
-                {this.props.session.currentUser ? <a className='writepost_button' onClick={this.handleClick}>Write</a>: null}
+                <div className='menu'>
+                    {this.props.session.currentUser ? <a className='writepost_button' onClick={this.WriteOpen}>Write</a>: null}
+                    {this.props.session.currentUser ? <a className='chat_button' onClick={this.ChatOpen}>Chat</a>: null}
+                </div>
                 <Header_User user={this.props.session.currentUser}/>
                 {this.state.write ? <WritePost handleWrite={this.handleWrite} /> : null}
+                {this.state.chat ? <Chat handleRemove={this.handleChatRemove} currentUser={this.props.session.currentUser} /> : null}
             </div>
         );
     }

@@ -2,8 +2,6 @@
 'use strict';
 
 import express from 'express';
-import http from 'http';
-import socket from 'socket.io';
 import bodyParser from 'body-parser';
 import path from 'path';
 import mongoose from 'mongoose';
@@ -18,8 +16,6 @@ import api from './routes';
 
 //server setting
 const app = express();
-const server = http.Server(app);
-const io = socket(server);
 
 const port = configure.PORT;
 const db = mongoose.connection;
@@ -84,17 +80,7 @@ app.use((err, req, res, next) => {
     res.status(500).send(err.response || 'Something broke!');
 });
 
-io.on('connection', (socket) => {
-    console.log('he is coming');
-    socket.on('disconnect', () => {
-        console.log('he is gone');
-    });
-    socket.on('chat message', (msg) => {
-        io.emit('chat message', msg);
-    });
-});
-
-server.listen(port, () => {
+app.listen(port, () => {
     console.log('I\'m waiting for you :) PORT :', port);
     console.log(configure.NODE_ENV, configure.OAUTH2_CALLBACK);
 });

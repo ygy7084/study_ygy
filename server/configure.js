@@ -41,7 +41,7 @@ let this_module = {
     this_module.PORT = process.env.PORT || 8080;
     this_module.NODE_ENV = (process.env.NODE_ENV||'development');
     if(this_module.NODE_ENV ==='development') {
-        this_module.OAUTH2_CALLBACK = "http://localhost:8080/auth/google/callback";
+        this_module.OAUTH2_CALLBACK = "http://localhost:"+this_module.PORT+"/auth/google/callback";
     }
     this_module.SECRET = 'keyboardcat';
 }());

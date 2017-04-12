@@ -37853,6 +37853,10 @@
 
 	var _components = __webpack_require__(576);
 
+	var _Chat = __webpack_require__(582);
+
+	var _Chat2 = _interopRequireDefault(_Chat);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -37870,11 +37874,13 @@
 	        var _this = _possibleConstructorReturn(this, (Header.__proto__ || Object.getPrototypeOf(Header)).call(this, props));
 
 	        _this.state = {
-	            write: false
+	            write: false,
+	            chat: false
 	        };
-
 	        _this.handleWrite = _this.handleWrite.bind(_this);
-	        _this.handleClick = _this.handleClick.bind(_this);
+	        _this.WriteOpen = _this.WriteOpen.bind(_this);
+	        _this.ChatOpen = _this.ChatOpen.bind(_this);
+	        _this.handleChatRemove = _this.handleChatRemove.bind(_this);
 	        return _this;
 	    }
 
@@ -37904,9 +37910,19 @@
 	            });
 	        }
 	    }, {
-	        key: 'handleClick',
-	        value: function handleClick() {
+	        key: 'WriteOpen',
+	        value: function WriteOpen() {
 	            this.setState({ write: !this.state.write });
+	        }
+	    }, {
+	        key: 'ChatOpen',
+	        value: function ChatOpen() {
+	            this.setState({ chat: !this.state.chat });
+	        }
+	    }, {
+	        key: 'handleChatRemove',
+	        value: function handleChatRemove() {
+	            this.setState({ chat: !this.state.chat });
 	        }
 	    }, {
 	        key: 'render',
@@ -37914,13 +37930,23 @@
 	            return _react2.default.createElement(
 	                'div',
 	                { className: 'header' },
-	                this.props.session.currentUser ? _react2.default.createElement(
-	                    'a',
-	                    { className: 'writepost_button', onClick: this.handleClick },
-	                    'Write'
-	                ) : null,
+	                _react2.default.createElement(
+	                    'div',
+	                    { className: 'menu' },
+	                    this.props.session.currentUser ? _react2.default.createElement(
+	                        'a',
+	                        { className: 'writepost_button', onClick: this.WriteOpen },
+	                        'Write'
+	                    ) : null,
+	                    this.props.session.currentUser ? _react2.default.createElement(
+	                        'a',
+	                        { className: 'chat_button', onClick: this.ChatOpen },
+	                        'Chat'
+	                    ) : null
+	                ),
 	                _react2.default.createElement(_components.Header_User, { user: this.props.session.currentUser }),
-	                this.state.write ? _react2.default.createElement(_components.WritePost, { handleWrite: this.handleWrite }) : null
+	                this.state.write ? _react2.default.createElement(_components.WritePost, { handleWrite: this.handleWrite }) : null,
+	                this.state.chat ? _react2.default.createElement(_Chat2.default, { handleRemove: this.handleChatRemove, currentUser: this.props.session.currentUser }) : null
 	            );
 	        }
 	    }]);
@@ -44614,8 +44640,7 @@
 	        var _this = _possibleConstructorReturn(this, (WritePost.__proto__ || Object.getPrototypeOf(WritePost)).call(this, props));
 
 	        _this.state = {
-	            content: '',
-	            style: _this.props.style
+	            content: ''
 	        };
 	        _this.handleClick = _this.handleClick.bind(_this);
 	        _this.handleChange = _this.handleChange.bind(_this);
@@ -44650,7 +44675,7 @@
 
 	            return _react2.default.createElement(
 	                'div',
-	                { className: 'writepost', style: this.props.style },
+	                { className: 'writepost' },
 	                _react2.default.createElement(
 	                    'div',
 	                    null,
@@ -44688,6 +44713,10 @@
 
 	var _react2 = _interopRequireDefault(_react);
 
+	var _interact = __webpack_require__(579);
+
+	var _interact2 = _interopRequireDefault(_interact);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -44705,11 +44734,14 @@
 	        var _this = _possibleConstructorReturn(this, (Chat.__proto__ || Object.getPrototypeOf(Chat)).call(this, props));
 
 	        _this.state = {
+	            coords: { x: 0, y: 50 },
 	            input: '',
-	            received: ''
+	            chat: []
 	        };
 	        _this.handleSubmit = _this.handleSubmit.bind(_this);
 	        _this.handleChange = _this.handleChange.bind(_this);
+	        _this.handleClear = _this.handleClear.bind(_this);
+	        _this.handleRemove = _this.handleRemove.bind(_this);
 	        return _this;
 	    }
 
@@ -44718,16 +44750,50 @@
 	        value: function componentDidMount() {
 	            var _this2 = this;
 
-	            this.socket = io();
-	            this.socket.on('chat message', function (msg) {
-	                _this2.setState({ received: msg });
+	            (0, _interact2.default)(this.chat).draggable({
+	                autoScroll: false,
+	                onmove: dragMoveListener,
+	                onstart: this.handleMoveStart,
+	                onend: this.handleMove
+	            }).styleCursor(false);
+
+	            function dragMoveListener(event) {
+	                var target = event.target,
+
+	                // keep the dragged position in the data-x/data-y attributes
+	                x_coord = (parseFloat(target.getAttribute('data-x_coord')) || 0) + event.dx,
+	                    y_coord = (parseFloat(target.getAttribute('data-y_coord')) || 0) + event.dy;
+	                // translate the element
+	                target.style.webkitTransform = target.style.transform = 'translate(' + x_coord + 'px, ' + y_coord + 'px)';
+
+	                // update the posiion attributes
+	                target.setAttribute('data-x_coord', x_coord);
+	                target.setAttribute('data-y_coord', y_coord);
+	            }
+
+	            this.socket = io('http://175.192.236.206:8081');
+	            this.socket.on('chat', function (chat) {
+	                _this2.setState({ chat: _this2.state.chat.concat(chat) });
 	            });
+	        }
+	    }, {
+	        key: 'componentWillUnmount',
+	        value: function componentWillUnmount() {
+	            this.socket.close();
+	        }
+	    }, {
+	        key: 'componentDidUpdate',
+	        value: function componentDidUpdate() {
+	            this.chatlist.scrollTop = this.chatlist.scrollHeight;
 	        }
 	    }, {
 	        key: 'handleSubmit',
 	        value: function handleSubmit(event) {
 	            event.preventDefault();
-	            this.socket.emit('chat message', this.state.input);
+	            this.socket.emit('chat', {
+	                user: this.props.currentUser.displayName,
+	                message: this.state.input
+	            });
 	            this.setState({ input: '' });
 	        }
 	    }, {
@@ -44738,22 +44804,56 @@
 	            });
 	        }
 	    }, {
+	        key: 'handleClear',
+	        value: function handleClear() {
+	            this.setState({
+	                chat: []
+	            });
+	        }
+	    }, {
+	        key: 'handleRemove',
+	        value: function handleRemove() {
+	            this.props.handleRemove();
+	        }
+	    }, {
 	        key: 'render',
 	        value: function render() {
+	            var _this3 = this;
+
 	            var view = void 0;
 	            view = _react2.default.createElement(
 	                'div',
-	                { style: { 'position': 'absolute', 'top': '300' } },
+	                { className: 'div_chatlist', ref: function ref(chat) {
+	                        _this3.chat = chat;
+	                    } },
 	                _react2.default.createElement(
-	                    'h1',
+	                    'div',
+	                    { className: 'delete', onClick: this.handleRemove },
+	                    'X'
+	                ),
+	                _react2.default.createElement(
+	                    'h4',
 	                    null,
-	                    this.state.received
+	                    'CHAT'
+	                ),
+	                _react2.default.createElement(
+	                    'ul',
+	                    { className: 'chatlist', ref: function ref(chatlist) {
+	                            _this3.chatlist = chatlist;
+	                        } },
+	                    this.state.chat.map(function (item, i) {
+	                        return _react2.default.createElement(
+	                            'li',
+	                            { className: 'chatlist_li', key: i },
+	                            item.user + ' : ' + item.message
+	                        );
+	                    })
 	                ),
 	                _react2.default.createElement(
 	                    'form',
-	                    { id: 'form', onSubmit: this.handleSubmit },
-	                    _react2.default.createElement('input', { type: 'text', id: 'm', autoComplete: 'off', value: this.state.input, onChange: this.handleChange }),
-	                    _react2.default.createElement('input', { type: 'submit', value: 'Send' })
+	                    { className: 'form_chatlist', onSubmit: this.handleSubmit },
+	                    _react2.default.createElement('input', { className: 'text_chatlist', type: 'text', placeholder: 'Write', autoComplete: 'off', value: this.state.input, onChange: this.handleChange }),
+	                    _react2.default.createElement('input', { className: 'btn_chatlist', type: 'submit', value: 'Send' })
 	                )
 	            );
 	            return view;
@@ -44884,8 +44984,7 @@
 	            return _react2.default.createElement(
 	                'div',
 	                { className: 'home' },
-	                _react2.default.createElement(_components.PostList, { onPostMove: this.handleModifyCoords, onPostRemove: this.handleRemove, onPostModify: this.handleModify, list: this.props.loadList.list, currentUser: this.props.session.currentUser }),
-	                _react2.default.createElement(_components.Chat, null)
+	                _react2.default.createElement(_components.PostList, { onPostMove: this.handleModifyCoords, onPostRemove: this.handleRemove, onPostModify: this.handleModify, list: this.props.loadList.list, currentUser: this.props.session.currentUser })
 	            );
 	        }
 	    }]);
@@ -45386,7 +45485,7 @@
 
 
 	// module
-	exports.push([module.id, "::-webkit-input-placeholder {\r\n    text-align: center;\r\n}\r\n\r\n:-moz-placeholder { /* Firefox 18- */\r\n    text-align: center;\r\n}\r\n\r\n::-moz-placeholder {  /* Firefox 19+ */\r\n    text-align: center;\r\n}\r\n\r\n:-ms-input-placeholder {\r\n    text-align: center;\r\n}\r\n\r\nbody {\r\n    margin:0;\r\n}\r\n* {\r\n    box-sizing: border-box;\r\n}\r\n.home_half {\r\n    float: left;\r\n    padding: 15px;\r\n    width: 50%;\r\n}\r\n.header {\r\n    width:100%;\r\n    left: 0;\r\n    right: 0;\r\n    position : fixed;\r\n    text-align: center;\r\n    padding:10px;\r\n    margin : auto;\r\n\r\n}\r\n.header a {\r\n    cursor: pointer;\r\n}\r\n.header .writepost_button {\r\n}\r\n.header .username {\r\n    position:fixed;\r\n    right:0\r\n}\r\ntextarea {\r\n    width : 200px;\r\n    height:auto;\r\n    padding:0;\r\n    resize:none;\r\n    border:none;\r\n    outline:none;\r\n    -webkit-box-shadow:none;\r\n    -moz-box-shadow:none;\r\n    box-shadow:none;\r\n    overflow-y:hidden;\r\n    font-size:1.2em;\r\n    background-color :transparent;\r\n}\r\n.writepost {\r\n\r\n}\r\n.writepost textarea{\r\n    padding : 5px;\r\n    text-align: left;\r\n    border-bottom : 1px solid white;\r\n    -webkit-box-shadow: none;\r\n    -moz-box-shadow: none;\r\n    box-shadow: none;\r\n\r\n    transition-duration: 0.5s;\r\n    -o-transition-duration: 0.5s;\r\n    -moz-transition-duration: 0.5s;\r\n    -webkit-transition-duration: 0.5s;\r\n}\r\n.writepost textarea:focus {\r\n    border-bottom : 1px solid black;\r\n}\r\n\r\n.writepost button {\r\n    background:none;\r\n    font-size:1em;\r\n    cursor: pointer;\r\n    border: 1px solid white;\r\n\r\n    transition-duration: 0.3s;\r\n    -o-transition-duration: 0.3s;\r\n    -moz-transition-duration: 0.3s;\r\n    -webkit-transition-duration: 0.3s;\r\n}\r\n.writepost button:hover {\r\n    border : 1px solid black;\r\n}\r\n\r\n\r\n.post {\r\n    display:inline-block;\r\n    position:absolute;\r\n    padding:2px;\r\n    border: 1px solid transparent;\r\n    cursor: pointer;\r\n}\r\n.post:hover {\r\n    border: 1px solid black;\r\n}\r\n.post:focus {\r\n    border: 1px solid black;\r\n}\r\n.post.mine {\r\n}\r\n.post.mine:hover {\r\n    border: 1px solid blue;\r\n}\r\n.post.notmine textarea {\r\n    cursor: pointer\r\n}\r\n.posthead .writer {\r\n    display: inline-block;\r\n}\r\n.posthead .delete {\r\n    display:inline-block;\r\n    float:right;\r\n}\r\n.posthead .delete:hover {\r\n    color:red\r\n}", ""]);
+	exports.push([module.id, "::-webkit-input-placeholder {\r\n    text-align: center;\r\n}\r\n\r\n:-moz-placeholder { /* Firefox 18- */\r\n    text-align: center;\r\n}\r\n\r\n::-moz-placeholder {  /* Firefox 19+ */\r\n    text-align: center;\r\n}\r\n\r\n:-ms-input-placeholder {\r\n    text-align: center;\r\n}\r\n\r\nbody {\r\n    margin:0;\r\n}\r\n* {\r\n    box-sizing: border-box;\r\n}\r\n.home_half {\r\n    float: left;\r\n    padding: 15px;\r\n    width: 50%;\r\n}\r\n.header {\r\n    width:100%;\r\n    left: 0;\r\n    right: 0;\r\n    position : fixed;\r\n    text-align: center;\r\n    padding:10px;\r\n    margin : auto;\r\n\r\n}\r\n.header a {\r\n    cursor: pointer;\r\n}\r\n\r\n.header .username {\r\n    position:fixed;\r\n    right:0\r\n}\r\n\r\n.header .menu {\r\n    text-align: center;\r\n}\r\n.header .menu > * {\r\n    margin : 10px;\r\n}\r\n\r\n\r\ntextarea {\r\n    width : 200px;\r\n    height:auto;\r\n    padding:0;\r\n    resize:none;\r\n    border:none;\r\n    outline:none;\r\n    -webkit-box-shadow:none;\r\n    -moz-box-shadow:none;\r\n    box-shadow:none;\r\n    overflow-y:hidden;\r\n    font-size:1.2em;\r\n    background-color :transparent;\r\n}\r\n.writepost {\r\n}\r\n.writepost textarea{\r\n    padding : 5px;\r\n    text-align: left;\r\n    border-bottom : 1px solid white;\r\n    -webkit-box-shadow: none;\r\n    -moz-box-shadow: none;\r\n    box-shadow: none;\r\n\r\n    transition-duration: 0.5s;\r\n    -o-transition-duration: 0.5s;\r\n    -moz-transition-duration: 0.5s;\r\n    -webkit-transition-duration: 0.5s;\r\n}\r\n.writepost textarea:focus {\r\n    border-bottom : 1px solid black;\r\n}\r\n\r\n.writepost button {\r\n    background:none;\r\n    font-size:1em;\r\n    cursor: pointer;\r\n    border: 1px solid transparent;\r\n\r\n    transition-duration: 0.3s;\r\n    -o-transition-duration: 0.3s;\r\n    -moz-transition-duration: 0.3s;\r\n    -webkit-transition-duration: 0.3s;\r\n}\r\n.writepost button:hover {\r\n    border : 1px solid black;\r\n}\r\n\r\n\r\n.post {\r\n    display:inline-block;\r\n    position:absolute;\r\n    padding:2px;\r\n    border: 1px solid transparent;\r\n    cursor: pointer;\r\n}\r\n.post:hover {\r\n    border: 1px solid black;\r\n}\r\n.post:focus {\r\n    border: 1px solid black;\r\n}\r\n.post.mine {\r\n}\r\n.post.mine:hover {\r\n    border: 1px solid blue;\r\n}\r\n.post.notmine textarea {\r\n    cursor: pointer\r\n}\r\n.posthead .writer {\r\n    display: inline-block;\r\n}\r\n\r\n.delete {\r\n    display:inline-block;\r\n    float:right;\r\n}\r\n.delete:hover {\r\n    color:red\r\n}\r\n\r\n.div_chatlist {\r\n    position: fixed;\r\n    display:inline-block;\r\n    padding:2px;\r\n    border: 1px solid transparent;\r\n    cursor: pointer;\r\n    width:300px;\r\n}\r\n.div_chatlist:hover {\r\n    border: 1px solid black;\r\n}\r\n.chatlist {\r\n    padding:0;\r\n    margin:0;\r\n    list-style-type: none;\r\n\r\n    max-height: 300px;\r\n    overflow: auto;\r\n}\r\n.text_chatlist {\r\n    padding:0;\r\n    margin:0;\r\n    border: 0;\r\n    background-color: transparent;\r\n    width:70%;\r\n\r\n    outline:none;\r\n    -webkit-box-shadow:none;\r\n    -moz-box-shadow:none;\r\n    box-shadow:none;\r\n\r\n    transition-duration: 0.5s;\r\n    -o-transition-duration: 0.5s;\r\n    -moz-transition-duration: 0.5s;\r\n    -webkit-transition-duration: 0.5s;\r\n\r\n}\r\n\r\n.chatlist_li {\r\n    text-align: left;\r\n}\r\n\r\n.btn_chatlist {\r\n    padding:0;\r\n    margin:0;\r\n    border:0;\r\n    background-color: transparent;\r\n    width:30%;\r\n\r\n    outline:none;\r\n    -webkit-box-shadow:none;\r\n    -moz-box-shadow:none;\r\n    box-shadow:none;\r\n\r\n    transition-duration: 0.3s;\r\n    -o-transition-duration: 0.3s;\r\n    -moz-transition-duration: 0.3s;\r\n    -webkit-transition-duration: 0.3s;\r\n\r\n    cursor: pointer;\r\n}\r\n.btn_chatlist:hover {\r\n    font-weight: bold;\r\n}\r\n.div_chatlist h4 {\r\n    text-align: center;\r\n    margin: 5px;\r\n}\r\n", ""]);
 
 	// exports
 

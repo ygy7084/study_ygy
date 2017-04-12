@@ -38,12 +38,20 @@ body {
 .header a {
     cursor: pointer;
 }
-.header .writepost_button {
-}
+
 .header .username {
     position:fixed;
     right:0
 }
+
+.header .menu {
+    text-align: center;
+}
+.header .menu > * {
+    margin : 10px;
+}
+
+
 textarea {
     width : 200px;
     height:auto;
@@ -59,7 +67,6 @@ textarea {
     background-color :transparent;
 }
 .writepost {
-
 }
 .writepost textarea{
     padding : 5px;
@@ -82,7 +89,7 @@ textarea {
     background:none;
     font-size:1em;
     cursor: pointer;
-    border: 1px solid white;
+    border: 1px solid transparent;
 
     transition-duration: 0.3s;
     -o-transition-duration: 0.3s;
@@ -118,10 +125,80 @@ textarea {
 .posthead .writer {
     display: inline-block;
 }
-.posthead .delete {
+
+.delete {
     display:inline-block;
     float:right;
 }
-.posthead .delete:hover {
+.delete:hover {
     color:red
+}
+
+.div_chatlist {
+    position: fixed;
+    display:inline-block;
+    padding:2px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    width:300px;
+}
+.div_chatlist:hover {
+    border: 1px solid black;
+}
+.chatlist {
+    padding:0;
+    margin:0;
+    list-style-type: none;
+
+    max-height: 300px;
+    overflow: auto;
+}
+.text_chatlist {
+    padding:0;
+    margin:0;
+    border: 0;
+    background-color: transparent;
+    width:70%;
+
+    outline:none;
+    -webkit-box-shadow:none;
+    -moz-box-shadow:none;
+    box-shadow:none;
+
+    transition-duration: 0.5s;
+    -o-transition-duration: 0.5s;
+    -moz-transition-duration: 0.5s;
+    -webkit-transition-duration: 0.5s;
+
+}
+
+.chatlist_li {
+    text-align: left;
+}
+
+.btn_chatlist {
+    padding:0;
+    margin:0;
+    border:0;
+    background-color: transparent;
+    width:30%;
+
+    outline:none;
+    -webkit-box-shadow:none;
+    -moz-box-shadow:none;
+    box-shadow:none;
+
+    transition-duration: 0.3s;
+    -o-transition-duration: 0.3s;
+    -moz-transition-duration: 0.3s;
+    -webkit-transition-duration: 0.3s;
+
+    cursor: pointer;
+}
+.btn_chatlist:hover {
+    font-weight: bold;
+}
+.div_chatlist h4 {
+    text-align: center;
+    margin: 5px;
 }

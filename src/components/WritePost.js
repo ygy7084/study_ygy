@@ -4,8 +4,7 @@ class WritePost extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            content : '',
-            style : this.props.style
+            content : ''
         }
         ;
         this.handleClick = this.handleClick.bind(this);
@@ -20,7 +19,6 @@ class WritePost extends React.Component {
     handleClick() {
         let coords = this.textarea.getBoundingClientRect();
         return this.props.handleWrite(this.state, coords.left, coords.top);
-
     }
 
     handleChange(e) {
@@ -33,7 +31,7 @@ class WritePost extends React.Component {
     render() {
 
         return (
-            <div className='writepost' style={this.props.style}>
+            <div className='writepost'>
                 <div>
                     <textarea ref={(textarea)=>{this.textarea = textarea;}} onChange={this.handleChange} value={this.state.content} name='content' placeholder='내용' />
                 </div>

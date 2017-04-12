@@ -73,11 +73,11 @@ class Home extends React.Component {
             }
         );
     }
+
     render() {
         return (
             <div className='home'>
                 <PostList onPostMove={this.handleModifyCoords} onPostRemove={this.handleRemove} onPostModify={this.handleModify} list={this.props.loadList.list} currentUser={this.props.session.currentUser}/>
-                <Chat/>
             </div>
         )
     }
