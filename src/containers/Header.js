@@ -1,6 +1,6 @@
 import React from 'react';
 import { sessionRequest } from '../actions/account';
-import { writeRequest } from '../actions/post'
+import { writeRequest, socket_writeRequest} from '../actions/post'
 import { connect } from 'react-redux';
 import { Header_User, WritePost} from '../components';
 import Chat from "../components/Chat";
@@ -12,10 +12,21 @@ class Header extends React.Component{
             write : false,
             chat : false
         };
+        this.socketInit = this.socketInit.bind(this);
         this.handleWrite = this.handleWrite.bind(this);
         this.WriteOpen = this.WriteOpen.bind(this);
         this.ChatOpen = this.ChatOpen.bind(this);
         this.handleChatRemove = this.handleChatRemove.bind(this);
+    }
+    componentDidMount() {
+        if(this.props.socket) {
+            this.socketInit(this.props.socket);
+        }
+    }
+    socketInit(socket) {
+        socket.on('write', (write) => {
+            this.props.socket_writeRequest(write)
+        });
     }
     handleWrite(post, x, y) {
         this.setState({write : !this.state.write});
@@ -29,8 +40,9 @@ class Header extends React.Component{
                 }
             }
         };
-        return this.props.writeRequest(request).then(() => {
+        return this.props.writeRequest(request).then((res) => {
             if(this.props.write.status === 'SUCCESS') {
+                this.props.socket.emit('write',res.post);
                 return true;
             }
             else {
@@ -57,7 +69,7 @@ class Header extends React.Component{
                 </div>
                 <Header_User user={this.props.session.currentUser}/>
                 {this.state.write ? <WritePost handleWrite={this.handleWrite} /> : null}
-                {this.state.chat ? <Chat handleRemove={this.handleChatRemove} currentUser={this.props.session.currentUser} /> : null}
+                {this.state.chat ? <Chat socket={this.props.socket} handleRemove={this.handleChatRemove} currentUser={this.props.session.currentUser} /> : null}
             </div>
         );
     }
@@ -69,7 +81,7 @@ const mapStateToProps = (state) => {
         },
         write : {
             status : state.post.write.status,
-            id : state.post.write.id
+            post : state.post.write.post
         },
     };
 };
@@ -79,8 +91,12 @@ const mapDispatchToProps = (dispatch) => {
             return dispatch(sessionRequest());
         },
         writeRequest : (request) => {
-            console.log('writeRequest called');
+            console.log('writeRequest called - header');
             return dispatch(writeRequest(request));
+        },
+        socket_writeRequest : (post) => {
+            console.log('socketWriteRequest called - header');
+            return dispatch(socket_writeRequest(post));
         }
     };
 };

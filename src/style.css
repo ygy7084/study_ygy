@@ -14,8 +14,13 @@
     text-align: center;
 }
 
+@font-face {
+    font-family:HoonWhitecatR;
+    src:url('/src/HoonWhitecatR.ttf') format('truetype')
+}
 body {
     margin:0;
+    font-family: HoonWhitecatR;
 }
 * {
     box-sizing: border-box;
@@ -65,6 +70,8 @@ textarea {
     overflow-y:hidden;
     font-size:1.2em;
     background-color :transparent;
+
+    font-family: HoonWhitecatR;
 }
 .writepost {
 }
@@ -115,9 +122,20 @@ textarea {
     border: 1px solid black;
 }
 .post.mine {
+    z-index:1
 }
 .post.mine:hover {
     border: 1px solid blue;
+}
+.post.notmine {
+    transition-duration: 0.5s;
+    transition-timing-function: ease-in-out;
+    -webkit-transition-duration: 0.5s;
+    -webkit-transition-timing-function: ease-in-out;
+    -o-transition-duration: 0.5s;
+    -o-transition-timing-function: ease-in-out;
+    -moz-transition-duration: 0.5s;
+    -moz-transition-timing-function: ease-in-out;
 }
 .post.notmine textarea {
     cursor: pointer

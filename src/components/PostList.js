@@ -1,27 +1,33 @@
 import React from 'react';
-import Post from './Post';
+import Post_Mine from './Post_Mine'
+import Post_NotMine from './Post_NotMine';
 
 class PostList extends React.Component {
     constructor(props) {
         super(props);
     };
-    shouldComponentUpdate(nextProps, nextState) {
-        return JSON.stringify(nextProps) !== JSON.stringify(this.props);
-    }
     render() {
         const dataToComponent = postlist => {
-            if(postlist && Array.isArray(postlist)) {
-                return postlist.map((post, i) => {
-                    return (<Post
-                        post = {post}
-                        key = {post.id}
-                        index = {i}
-                        ownership = {this.props.currentUser ? post.writer.id === this.props.currentUser.id : false}
-                        onPostMove = {this.props.onPostMove}
-                        onPostRemove = {this.props.onPostRemove}
-                        onPostModify = {this.props.onPostModify}
-                    />);
-                });
+            if(postlist) {
+                let arr = [];
+                for(let post in postlist) {
+                    if(!postlist[post].writer)
+                    if (this.props.currentUser && this.props.currentUser.displayName===postlist[post].writer.displayName)
+                        arr.push(<Post_Mine
+                            post={postlist[post]}
+                            key={postlist[post].id}
+                            onPostMove={this.props.onPostMove}
+                            onPostRemove={this.props.onPostRemove}
+                            onPostModify={this.props.onPostModify}
+                            socket={this.props.socket}
+                        />);
+                    else
+                        arr.push(<Post_NotMine
+                            post={postlist[post]}
+                            key={postlist[post].id}
+                        />);
+                }
+                return arr;
             }
             else
                 return null;

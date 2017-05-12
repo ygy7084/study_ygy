@@ -13,7 +13,10 @@ import {
     POST_MODIFY_FAILURE,
     POST_REMOVE,
     POST_REMOVE_SUCCESS,
-    POST_REMOVE_FAILURE
+    POST_REMOVE_FAILURE,
+    SOCKET_POST_WRITE_SUCCESS,
+    SOCKET_POST_MODIFY_SUCCESS,
+    SOCKET_POST_REMOVE_SUCCESS
 } from './actions';
 
 export function loadListRequest(){}
@@ -37,6 +40,14 @@ export function remove(){}
 export function removeSuccess(){}
 export function removeFailure(){}
 
+export function socket_writeRequest(){}
+export function socket_writeSuccess(){}
+export function socket_modifyRequest(){}
+export function socket_modifySuccess(){}
+export function socket_removeRequest(){}
+export function socket_removeSuccess(){}
+
+
 loadListRequest = () => {
     return (dispatch) => {
         dispatch(loadList());
@@ -50,14 +61,14 @@ loadListRequest = () => {
             .then(res => res.json())
             .then(res => {
                 if(res.success) {
-                    dispatch(loadListSuccess(res.list));
+                    return dispatch(loadListSuccess(res.list));
                 } else {
-                    dispatch(loadListFailure());
+                    return dispatch(loadListFailure());
                 }
             })
             .catch((error) => {
                 console.log(error);
-                dispatch(loadListFailure());
+                return dispatch(loadListFailure());
             });
     }
 };
@@ -92,14 +103,14 @@ loadRequest = (id) => {
             .then(res => res.json())
             .then(res => {
                 if(res.success) {
-                    dispatch(loadSuccess(res.post));
+                    return dispatch(loadSuccess(res.post));
                 } else {
-                    dispatch(loadFailure());
+                    return dispatch(loadFailure());
                 }
             })
             .catch((error) => {
                 console.log(error);
-                dispatch(loadFailure());
+                return dispatch(loadFailure());
             });
 
     }
@@ -134,14 +145,14 @@ writeRequest = (request) => {
             .then(res => res.json())
             .then(res => {
                 if(res.success)
-                    dispatch(writeSuccess(res.post));
+                    return dispatch(writeSuccess(res.post));
 
                 else
-                    dispatch(writeFailure());
+                    return dispatch(writeFailure());
             })
             .catch((err) => {
                 console.log(err);
-                dispatch(writeFailure());
+                return dispatch(writeFailure());
             });
     }
 };
@@ -177,13 +188,13 @@ modifyRequest = (request) => {
             .then(res => res.json())
             .then(res => {
                 if(res.success) {
-                    dispatch(modifySuccess(request.index, request.body));
+                    return dispatch(modifySuccess(res.post));
                 } else {
-                    dispatch(modifyFailure());
+                    return dispatch(modifyFailure());
                 }
             }).catch((error) => {
                 console.log(error);
-                dispatch(modifyFailure());
+                return dispatch(modifyFailure());
             });
     }
 };
@@ -192,10 +203,9 @@ modify = () => {
         type : POST_MODIFY
     }
 };
-modifySuccess = (index, post) => {
+modifySuccess = (post) => {
     return {
         type : POST_MODIFY_SUCCESS,
-        index : index,
         post : post
     }
 };
@@ -218,13 +228,13 @@ removeRequest = (request) => {
             .then(res => res.json())
             .then(res => {
                if(res.success) {
-                   dispatch(removeSuccess(request.index));
+                   return dispatch(removeSuccess(res.id));
                } else {
-                   dispatch(removeFailure());
+                   return dispatch(removeFailure());
                }
             }).catch((error) => {
                 console.log(error);
-                dispatch(removeFailure());
+                return dispatch(removeFailure());
             });
     }
 };
@@ -233,14 +243,51 @@ remove = () => {
         type : POST_REMOVE
     }
 };
-removeSuccess = (index) => {
+removeSuccess = (id) => {
     return {
-        index : index,
+        id : id,
         type : POST_REMOVE_SUCCESS
     }
 };
 removeFailure = () => {
     return {
         type : POST_REMOVE_FAILURE
+    }
+};
+
+socket_writeRequest = (post) => {
+    return (dispatch) => {
+        return dispatch(socket_writeSuccess(post))
+    }
+};
+socket_writeSuccess = (post) => {
+    return {
+        post : post,
+        type : SOCKET_POST_WRITE_SUCCESS
+    }
+};
+
+socket_modifyRequest = (post) => {
+    return (dispatch) => {
+        return dispatch(socket_modifySuccess(post));
+
+    }
+};
+socket_modifySuccess = (post) => {
+    return {
+        type : SOCKET_POST_MODIFY_SUCCESS,
+        post : post
+    }
+};
+
+socket_removeRequest = (id) => {
+    return (dispatch) => {
+        return dispatch(socket_removeSuccess(id));
+    }
+};
+socket_removeSuccess = (id) => {
+    return {
+        id : id,
+        type : SOCKET_POST_REMOVE_SUCCESS
     }
 };

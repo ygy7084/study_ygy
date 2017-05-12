@@ -94,8 +94,7 @@ router.put('/modify/:mode', (req,res) => {
     Post.update({_id:req.body.id}, {$set: body}, (err) => {
         if(err) throw err;
         else
-            return res.json({success:true});
-
+            return res.json({success:true, post:req.body});
     });
 });
 
@@ -103,7 +102,7 @@ router.delete('/remove', (req,res) => {
     Post.remove({_id:req.body.id},(err) => {
         if(err) throw err;
         else
-            return res.json({success : true})
+            return res.json({success : true, id:req.body.id})
     });
 });
 

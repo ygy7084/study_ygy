@@ -9,6 +9,8 @@ class Chat extends React.Component {
             input : '',
             chat : []
         };
+        this.socketInit = this.socketInit.bind(this);
+
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.handleClear = this.handleClear.bind(this);
@@ -38,20 +40,23 @@ class Chat extends React.Component {
             target.setAttribute('data-y_coord', y_coord);
         }
 
-        this.socket = io('http://175.192.236.206:8081');
-        this.socket.on('chat', (chat) => {
-            this.setState({chat: this.state.chat.concat(chat)})
+        this.socketInit(this.props.socket);
+    }
+    socketInit(socket) {
+        socket.on('chat', (chat) => {
+            this.setState({chat: this.state.chat.concat(chat)});
+            console.log('chat on');
         })
     }
     componentWillUnmount() {
-        this.socket.close();
+        this.props.socket.off('chat');
     }
     componentDidUpdate() {
         this.chatlist.scrollTop = this.chatlist.scrollHeight;
     }
     handleSubmit(event) {
         event.preventDefault();
-        this.socket.emit('chat',{
+        this.props.socket.emit('chat',{
             user:this.props.currentUser.displayName,
             message:this.state.input
         });

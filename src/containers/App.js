@@ -6,15 +6,40 @@ import { connect } from 'react-redux';
 class App extends React.Component {
     constructor(props) {
         super(props);
+        this.state = {
+            socket:undefined
+        };
+        this.makeSocket = this.makeSocket.bind(this);
+    }
+    makeSocket() {
+        let socket = io('http://175.192.236.206:8081', {'forceNew':true, 'reconnection': true, 'reconnectionDelay': 500,});
+        socket.on('connect', () => {
+            console.log('connect');
+        });
+        socket.on('disconnect', () => {
+            console.log('disconnect');
+            setTimeout(() => {
+                console.log('reconnecting');
+                if(this.state.socket) {
+                    this.state.socket.destroy();
+                    delete this.state.socket;
+                    this.setState({socket:null});
+                }
+                this.makeSocket();
+            }, 500);
+        });
+        this.setState({socket:socket});
     }
     componentWillMount() {
         this.props.sessionRequest();
+        this.makeSocket();
     }
     render() {
+        console.log(this.state.socket);
         return (
             <div>
-                <Header />
-                { this.props.children }
+                <Header socket={this.state.socket}/>
+                {React.cloneElement(this.props.children, {socket:this.state.socket})}
             </div>
         )
     }

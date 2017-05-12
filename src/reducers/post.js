@@ -31,10 +31,14 @@ export default function post(state = initialState, action) {
                 }
             });
         case types.POST_LOADLIST_SUCCESS :
+            let obj = {};
+            action.list.forEach((item) => {
+               obj[item.id] = item;
+            });
             return update(state, {
                 loadList : {
                     status : { $set : 'SUCCESS' },
-                    list : { $set : action.list }
+                    list : { $set : obj }
                 }
             });
         case types.POST_LOADLIST_FAILURE :
@@ -72,11 +76,11 @@ export default function post(state = initialState, action) {
             return update(state, {
                 write : {
                     status : { $set : 'SUCCESS' },
-                    id : { $set : action.post.id }
+                    post : {$set:action.post}
                 },
                 loadList : {
                     list : {
-                        $push : [action.post]
+                        [action.post.id] : {$set : action.post}
                     }
                 }
             });
@@ -99,7 +103,7 @@ export default function post(state = initialState, action) {
                 },
                 loadList : {
                     list : {
-                        [action.index] : {$merge : action.post}
+                        [action.post.id] : {$merge : action.post}
                     }
                 }
             });
@@ -116,20 +120,46 @@ export default function post(state = initialState, action) {
                 }
             });
         case types.POST_REMOVE_SUCCESS :
+            let newlist = JSON.parse(JSON.stringify(state.loadList.list));
+            delete newlist[action.id];
             return update(state, {
                 remove : {
                     status : { $set : 'SUCCESS'}
                 },
                 loadList : {
-                    list : {
-                        $splice : [[action.index, 1]]
-                    }
+                    list : { $set:newlist }
                 }
             });
         case types.POST_REMOVE_FAILURE :
             return update(state, {
                 remove : {
                     status : { $set : 'FAILURE' }
+                }
+            });
+        case types.SOCKET_POST_WRITE_SUCCESS :
+            return update(state, {
+                loadList : {
+                    list : {
+                        [action.post.id] : {$set : action.post}
+                    }
+                }
+            });
+
+        case types.SOCKET_POST_MODIFY_SUCCESS :
+            return update(state, {
+                loadList : {
+                    list : {
+                        [action.post.id] : {$merge : action.post}
+                    }
+                }
+            });
+
+        case types.SOCKET_POST_REMOVE_SUCCESS :
+            newlist = JSON.parse(JSON.stringify(state.loadList.list));
+            delete newlist[action.id];
+            return update(state, {
+                loadList : {
+                    list : { $set:newlist }
                 }
             });
         default :
