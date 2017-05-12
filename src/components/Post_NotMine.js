@@ -7,7 +7,7 @@ class Post extends React.Component {
 
         this.state = {
             coords : this.props.post.coords,
-            content : this.props.post.content,
+            content : this.props.post.content ? this.props.post.content : '',
             moving : false,
             post_button_style : {
                 display: 'none'
@@ -51,6 +51,30 @@ class Post extends React.Component {
         }
 
         this.textarea.style.cssText = 'height:'+this.textarea.scrollHeight+'px';
+
+        //socket
+        if(this.props.socket) {
+            this.props.socket.on('modify', (modify) => {
+                this.handleSocket_modifyRequest({
+                    id: modify.body.id,
+                    content: modify.body.content
+                })
+            });
+            this.props.socket.on('modifyCoords', (modify) => {
+                this.handleSocket_modifyRequestCoords({
+                    id: modify.body.id,
+                    coords: modify.body.coords
+                })
+            });
+        }
+    }
+    componentWillReceiveProps(prev, next) {
+        if(prev !== next) {
+            this.setState({
+                coords : this.props.post.coords,
+                content : this.props.post.content ? this.props.post.content : ''
+            });
+        }
     }
 
     handleClick() {
@@ -69,7 +93,6 @@ class Post extends React.Component {
         let target = event.target;
         let post = {
             id : target.getAttribute('id'),
-            index : this.props.index,
             coords : {
                 x : target.getAttribute('data-x_coord'),
                 y : target.getAttribute('data-y_coord')
@@ -82,13 +105,12 @@ class Post extends React.Component {
         this.props.onPostMove(post);
     }
     handleRemove() {
-        this.props.onPostRemove({id:this.props.post.id,index:this.props.index});
+        this.props.onPostRemove({id:this.props.post.id});
     }
     handleModify() {
         this.props.onPostModify({
             id:this.props.post.id,
-            content:this.state.content,
-            index:this.props.index
+            content:this.state.content
         });
         this.handleModify_View();
         this.handleClick();
@@ -117,7 +139,6 @@ class Post extends React.Component {
             'data-x_coord' : coords.x,
             'data-y_coord' : coords.y
         };
-
         return (
             <div {...props} style={style} className={this.props.ownership ? 'post mine' : 'post notmine'} onClick={this.handleClick} id={this.props.post.id}>
                 <div className='posthead'>
