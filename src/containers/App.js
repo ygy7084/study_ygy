@@ -12,7 +12,7 @@ class App extends React.Component {
         this.makeSocket = this.makeSocket.bind(this);
     }
     makeSocket() {
-        let socket = io('http://175.192.236.206:8081', {'forceNew':true, 'reconnection': true, 'reconnectionDelay': 500,});
+        let socket = io('http://220.230.112.62:3001', {'forceNew':true, 'reconnection': true, 'reconnectionDelay': 500,});
         socket.on('connect', () => {
             console.log('connect');
         });

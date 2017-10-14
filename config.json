@@ -7,5 +7,5 @@
   "OAUTH2_CLIENT_ID": "367205574650-rld2tk5s2tvaq36fg8641ifst8qo6hlo.apps.googleusercontent.com",
   "OAUTH2_CLIENT_SECRET": "R47w18UFuSEMcAb_Y9X7xmsn",
   "OAUTH2_CALLBACK": "https://yangkiyeop2.appspot.com/auth/google/callback",
-  "MEMCACHE_URL": "pub-memcache-12602.ap-northeast-1-2.1.ec2.garantiadata.com:12602"
+  "MEMCACHE_URL": "pub-memcache-19989.ap-northeast-1-2.1.ec2.garantiadata.com:19989"
 }

@@ -38,7 +38,7 @@ let this_module = {
             this_module[config_key[i]] = config[config_key[i]];
     }
 
-    this_module.PORT = process.env.PORT || 8080;
+    this_module.PORT = process.env.PORT || 3000;
     this_module.NODE_ENV = (process.env.NODE_ENV||'development');
     if(this_module.NODE_ENV ==='development') {
         this_module.OAUTH2_CALLBACK = "http://localhost:"+this_module.PORT+"/auth/google/callback";
